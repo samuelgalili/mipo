@@ -3,7 +3,7 @@ name: CI/CD → Vercel + Mipo WhatsApp
 on:
   push:
     branches: [main]
-  workflow_dispatch: # הרצה ידנית מ-GitHub UI / CLI
+  workflow_dispatch:
 
 # מניעת ריצות כפולות אם נדחפו כמה commits ברצף
 concurrency:
@@ -12,12 +12,17 @@ concurrency:
 
 jobs:
   # ──────────────────────────────────────────────
-  # JOB 1: TypeScript + Build
+  # JOB 1: TypeScript check + Vercel build
   # ──────────────────────────────────────────────
   build:
-    name: ✅ TypeScript & Vite Build
+    name: ✅ TypeScript & Build
     runs-on: ubuntu-latest
     timeout-minutes: 10
+
+    env:
+      VERCEL_TOKEN:      ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID:     ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
     steps:
       - name: Checkout
@@ -35,22 +40,23 @@ jobs:
       - name: TypeScript check
         run: npx tsc --noEmit
 
-      - name: Vite build
-        env:
-          VITE_SUPABASE_URL:      ${{ secrets.VITE_SUPABASE_URL }}
-          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
-        run: npm run build
+      - name: Install Vercel CLI
+        run: npm install -g vercel@latest
 
-      # שמירת תיקיית dist לשימוש ב-job הבא
-      - name: Upload dist artifact
+      # vercel build = vite build אבל עם פורמט .vercel/output/ תקני
+      # VITE_* env vars מוגדרים בפרויקט ב-Vercel dashboard
+      - name: Vercel build
+        run: vercel build --prod --yes
+
+      - name: Upload .vercel/output artifact
         uses: actions/upload-artifact@v4
         with:
-          name: dist
-          path: dist/
+          name: vercel-output
+          path: .vercel/output/
           retention-days: 1
 
   # ──────────────────────────────────────────────
-  # JOB 2: Deploy to Vercel
+  # JOB 2: Deploy prebuilt artifact to Vercel
   # ──────────────────────────────────────────────
   deploy:
     name: 🚀 Deploy to Vercel
@@ -60,48 +66,30 @@ jobs:
     outputs:
       deploy_url: ${{ steps.deploy.outputs.url }}
 
+    env:
+      VERCEL_TOKEN:      ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID:     ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js 20
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Download dist artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: dist
-          path: dist/
-
       - name: Install Vercel CLI
         run: npm install -g vercel@latest
 
-      - name: Pull Vercel project settings
-        env:
-          VERCEL_TOKEN:      ${{ secrets.VERCEL_TOKEN }}
-          VERCEL_ORG_ID:     ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-        run: vercel pull --yes --environment=production --token=$VERCEL_TOKEN
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: vercel-output
+          path: .vercel/output/
 
-      - name: Deploy to production
+      - name: Deploy prebuilt to production
         id: deploy
-        env:
-          VERCEL_TOKEN:      ${{ secrets.VERCEL_TOKEN }}
-          VERCEL_ORG_ID:     ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
         run: |
-          URL=$(vercel deploy --prebuilt --prod --token=$VERCEL_TOKEN)
+          URL=$(vercel deploy --prebuilt --prod --yes)
           echo "url=$URL" >> "$GITHUB_OUTPUT"
-          echo "✅ Deployed to: $URL"
+          echo "✅ Deployed → $URL"
 
   # ──────────────────────────────────────────────
-  # JOB 3: Notify via OpenClaw → WhatsApp
+  # JOB 3: Notify Mipo via OpenClaw → WhatsApp
   # ──────────────────────────────────────────────
   notify:
     name: 📲 Mipo WhatsApp Notification
@@ -119,41 +107,36 @@ jobs:
           COMMIT_SHA:              ${{ github.sha }}
           COMMIT_MESSAGE:          ${{ github.event.head_commit.message }}
           ACTOR:                   ${{ github.actor }}
-          REPO:                    ${{ github.repository }}
         run: |
           PAYLOAD=$(jq -n \
-            --arg event       "deploy_success" \
-            --arg deploy_url  "$DEPLOY_URL" \
-            --arg commit_sha  "${COMMIT_SHA:0:7}" \
-            --arg commit_msg  "$COMMIT_MESSAGE" \
-            --arg actor       "$ACTOR" \
-            --arg repo        "$REPO" \
-            --arg timestamp   "$(date -u +"%Y-%m-%dT%H:%M:%SZ")" \
+            --arg event      "deploy_success" \
+            --arg deploy_url "$DEPLOY_URL" \
+            --arg sha        "${COMMIT_SHA:0:7}" \
+            --arg msg        "$COMMIT_MESSAGE" \
+            --arg actor      "$ACTOR" \
+            --arg ts         "$(date -u +"%Y-%m-%dT%H:%M:%SZ")" \
             '{
-              event:       $event,
-              deploy_url:  $deploy_url,
-              commit_sha:  $commit_sha,
-              commit_msg:  $commit_msg,
-              actor:       $actor,
-              repo:        $repo,
-              timestamp:   $timestamp,
-              message:     ("🐾 MIPO עודכן בהצלחה!\n\n🔗 " + $deploy_url + "\n📝 " + $commit_msg + "\n👤 " + $actor + "\n🔖 " + $commit_sha)
+              event:      $event,
+              deploy_url: $deploy_url,
+              commit_sha: $sha,
+              commit_msg: $msg,
+              actor:      $actor,
+              timestamp:  $ts,
+              message:    ("🐾 MIPO עודכן בהצלחה!\n\n🔗 " + $deploy_url + "\n📝 " + $msg + "\n👤 " + $actor + "\n🔖 " + $sha)
             }')
 
-          HTTP_STATUS=$(curl -s -o /tmp/webhook_response.txt -w "%{http_code}" \
+          HTTP_STATUS=$(curl -s -o /tmp/wh.txt -w "%{http_code}" \
             -X POST "$OPENCLAW_WEBHOOK_URL" \
             -H "Content-Type: application/json" \
             -H "X-Webhook-Secret: $OPENCLAW_WEBHOOK_SECRET" \
-            -H "X-GitHub-Event: push" \
             --max-time 15 \
             --data "$PAYLOAD")
 
-          echo "OpenClaw response ($HTTP_STATUS):"
-          cat /tmp/webhook_response.txt
+          echo "OpenClaw → HTTP $HTTP_STATUS"
+          cat /tmp/wh.txt
 
-          if [ "$HTTP_STATUS" -lt 200 ] || [ "$HTTP_STATUS" -ge 300 ]; then
-            echo "⚠️ Webhook returned HTTP $HTTP_STATUS — deploy was still successful"
-            exit 0  # לא נכשיל את ה-pipeline בגלל webhook
-          fi
-
-          echo "✅ Mipo notified via WhatsApp"
+          # לא נכשיל את ה-pipeline אם ה-webhook נכשל
+          [ "$HTTP_STATUS" -ge 200 ] && [ "$HTTP_STATUS" -lt 300 ] \
+            && echo "✅ Mipo notified via WhatsApp" \
+            || echo "⚠️ Webhook failed — deploy still succeeded"
+          exit 0
