@@ -25,23 +25,26 @@ export const ComingSoonPage: React.FC = () => {
           visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8',
         ].join(' ')}
       >
-        {/* עיגול לוגו M */}
+        {/* לוגו MIPO */}
         <div className="relative">
-          {/* הילה חיצונית */}
-          <div className="absolute inset-0 rounded-full bg-gradient-to-br from-purple-400 via-violet-400 to-fuchsia-400 blur-2xl opacity-30 scale-110" />
-
-          {/* עיגול ראשי */}
-          <div className="relative w-36 h-36 rounded-full bg-gradient-to-br from-purple-500 via-violet-500 to-fuchsia-500 flex items-center justify-center shadow-2xl shadow-purple-400/40">
-            {/* עיגול פנימי */}
-            <div className="absolute inset-[3px] rounded-full bg-white/10" />
-            {/* האות M */}
-            <span
-              className="text-white text-6xl leading-none select-none"
-              style={{ fontFamily: '"DM Serif Display", serif' }}
-            >
-              M
-            </span>
-          </div>
+          <div className="absolute inset-0 rounded-full blur-2xl opacity-25 scale-125 bg-[radial-gradient(ellipse_at_center,_#9B6BAE,_#4A90C4)]" />
+          <svg viewBox="0 0 100 100" width="140" height="140" className="relative drop-shadow-xl">
+            <defs>
+              <linearGradient id="mg" x1="0" y1="0" x2="100" y2="100" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stopColor="#C47B5A" />
+                <stop offset="50%" stopColor="#9B6BAE" />
+                <stop offset="100%" stopColor="#4A90C4" />
+              </linearGradient>
+            </defs>
+            <path
+              d="M18 78 L18 34 C18 22,26 16,36 16 C44 16,49 22,50 32 C51 22,56 16,64 16 C74 16,82 22,82 34 L82 78"
+              stroke="url(#mg)"
+              strokeWidth="8"
+              strokeLinecap="round"
+              fill="none"
+            />
+            <circle cx="50" cy="58" r="5.5" fill="url(#mg)" />
+          </svg>
         </div>
 
         {/* טקסט */}
