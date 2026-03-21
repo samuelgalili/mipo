@@ -12,5 +12,7 @@ export { default as MipoLoader }              from './MipoLoader';
 export { default as MipoDivider }             from './MipoDivider';
 export { MipoToastProvider, useToast }        from './MipoToast';
 
+export { default as MipoLogin }              from './MipoLogin';
+
 // טוקני עיצוב
 export * as tokens                            from './tokens';

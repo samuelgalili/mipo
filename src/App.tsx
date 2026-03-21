@@ -5,9 +5,12 @@ import { AuthPage } from './pages/AuthPage'
 import { OnboardingPage } from './pages/OnboardingPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { ComingSoonPage } from './pages/ComingSoonPage'
+import AdminEvalsDashboard from './pages/AdminEvalsDashboard'
 import { supabase } from './lib/supabase'
 
 const COMING_SOON = true
+// כדי לגשת לדשבורד admin: פתח /admin בכתובת ה-URL
+const isAdminRoute = typeof window !== 'undefined' && window.location.pathname === '/admin'
 
 type AppScreen = 'loading' | 'auth' | 'onboarding' | 'dashboard'
 
@@ -51,6 +54,7 @@ const AppRouter = () => {
 }
 
 function App() {
+  if (isAdminRoute) return <AdminEvalsDashboard />
   if (COMING_SOON) return <ComingSoonPage />
   return (
     <AuthProvider>

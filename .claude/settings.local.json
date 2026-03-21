@@ -16,7 +16,8 @@
       "Bash(node:*)",
       "Bash(git push:*)",
       "Bash(vercel env:*)",
-      "Bash(vercel:*)"
+      "Bash(vercel:*)",
+      "Bash(npx tsc:*)"
     ]
   }
 }
