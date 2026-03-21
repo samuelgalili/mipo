@@ -4,7 +4,10 @@ import { AuthProvider, useAuth } from './context/AuthContext'
 import { AuthPage } from './pages/AuthPage'
 import { OnboardingPage } from './pages/OnboardingPage'
 import { DashboardPage } from './pages/DashboardPage'
+import { ComingSoonPage } from './pages/ComingSoonPage'
 import { supabase } from './lib/supabase'
+
+const COMING_SOON = false // שנה ל-true להצגת דף Coming Soon
 
 type AppScreen = 'loading' | 'auth' | 'onboarding' | 'dashboard'
 
@@ -48,6 +51,7 @@ const AppRouter = () => {
 }
 
 function App() {
+  if (COMING_SOON) return <ComingSoonPage />
   return (
     <AuthProvider>
       <AppRouter />
