@@ -109,6 +109,12 @@ jobs:
           COMMIT_MESSAGE:          ${{ github.event.head_commit.message }}
           ACTOR:                   ${{ github.actor }}
         run: |
+          # אם ה-secret לא הוגדר — מדלגים בשקט
+          if [ -z "$OPENCLAW_WEBHOOK_URL" ]; then
+            echo "⏭️  OPENCLAW_WEBHOOK_URL not set — skipping WhatsApp notification"
+            exit 0
+          fi
+
           PAYLOAD=$(jq -n \
             --arg event      "deploy_success" \
             --arg deploy_url "$DEPLOY_URL" \
@@ -131,13 +137,11 @@ jobs:
             -H "Content-Type: application/json" \
             -H "X-Webhook-Secret: $OPENCLAW_WEBHOOK_SECRET" \
             --max-time 15 \
-            --data "$PAYLOAD")
+            --data "$PAYLOAD") || true
 
           echo "OpenClaw → HTTP $HTTP_STATUS"
-          cat /tmp/wh.txt
+          cat /tmp/wh.txt 2>/dev/null || true
 
-          # לא נכשיל את ה-pipeline אם ה-webhook נכשל
           [ "$HTTP_STATUS" -ge 200 ] && [ "$HTTP_STATUS" -lt 300 ] \
             && echo "✅ Mipo notified via WhatsApp" \
-            || echo "⚠️ Webhook failed — deploy still succeeded"
-          exit 0
+            || echo "⚠️ Webhook returned $HTTP_STATUS — deploy still succeeded"
