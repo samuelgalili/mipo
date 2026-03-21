@@ -46,7 +46,10 @@ jobs:
       # vercel build = vite build אבל עם פורמט .vercel/output/ תקני
       # VITE_* env vars מוגדרים בפרויקט ב-Vercel dashboard
       - name: Vercel build
-        run: vercel build --prod --yes
+        run: |
+          # strip whitespace/newlines from token (in case secret was pasted with trailing space)
+          export VERCEL_TOKEN=$(echo "$VERCEL_TOKEN" | tr -d '[:space:]')
+          vercel build --prod --yes
 
       - name: Upload .vercel/output artifact
         uses: actions/upload-artifact@v4
@@ -84,6 +87,7 @@ jobs:
       - name: Deploy prebuilt to production
         id: deploy
         run: |
+          export VERCEL_TOKEN=$(echo "$VERCEL_TOKEN" | tr -d '[:space:]')
           URL=$(vercel deploy --prebuilt --prod --yes)
           echo "url=$URL" >> "$GITHUB_OUTPUT"
           echo "✅ Deployed → $URL"
