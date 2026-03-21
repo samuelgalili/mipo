@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { supabase } from '../lib/supabase'
+import { useAuth } from '../context/AuthContext'
 import type { OnboardingData } from '../types/onboarding'
 import { StepIndicator } from '../components/onboarding/StepIndicator'
 import { Step1Owner } from '../components/onboarding/Step1Owner'
@@ -40,7 +41,12 @@ function validate(step: number, data: OnboardingData): Errors {
   return errors
 }
 
-export const OnboardingPage: React.FC = () => {
+interface OnboardingPageProps {
+  onComplete?: () => void
+}
+
+export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onComplete }) => {
+  const { user } = useAuth()
   const [step, setStep] = useState(1)
   const [done, setDone] = useState(false)
   const [data, setData] = useState<OnboardingData>(initialData)
@@ -87,6 +93,7 @@ export const OnboardingPage: React.FC = () => {
     try {
       const { error } = await supabase.from('onboarding').insert([
         {
+          user_id: user?.id ?? null,
           owner_name: data.ownerName,
           owner_email: data.ownerEmail,
           pet_type: data.petType,
@@ -127,7 +134,7 @@ export const OnboardingPage: React.FC = () => {
 
         <div className="bg-white rounded-3xl shadow-xl shadow-purple-100/60 border border-purple-100 p-6 sm:p-8">
           {done ? (
-            <StepDone data={data} onFinish={() => alert('ברוכים הבאים ל-MIPO! 🐾')} />
+            <StepDone data={data} onFinish={() => onComplete?.()} />
           ) : (
             <>
               {/* מד התקדמות */}
