@@ -1,44 +1,38 @@
-import React, { useState } from 'react'
+import React, { useState, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import type { OnboardingData } from '../types/onboarding'
-import { StepIndicator } from '../components/onboarding/StepIndicator'
-import { Step1Owner } from '../components/onboarding/Step1Owner'
-import { Step2PetType } from '../components/onboarding/Step2PetType'
-import { Step3PetDetails } from '../components/onboarding/Step3PetDetails'
-import { StepDone } from '../components/onboarding/StepDone'
-import { Button } from '../components/ui/Button'
+import { ProgressBar } from '../components/onboarding/ProgressBar'
+import { Screen1Welcome } from '../components/onboarding/Screen1Welcome'
+import { Screen2PetType } from '../components/onboarding/Screen2PetType'
+import { Screen3PetDetails } from '../components/onboarding/Screen3PetDetails'
+import { Screen4Owner } from '../components/onboarding/Screen4Owner'
+import { Screen5Features } from '../components/onboarding/Screen5Features'
+import { Screen6Done } from '../components/onboarding/Screen6Done'
 
-const TOTAL_STEPS = 3
-const STEP_LABELS = ['פרטים שלי', 'סוג חיה', 'פרטי חיה']
+const TOTAL = 6
 
 const initialData: OnboardingData = {
-  ownerName: '',
-  ownerEmail: '',
   petType: '',
   petName: '',
   petAge: '',
   petBreed: '',
+  ownerName: '',
+  ownerEmail: '',
 }
 
 type Errors = Partial<Record<keyof OnboardingData, string>>
 
-function validate(step: number, data: OnboardingData): Errors {
-  const errors: Errors = {}
-  if (step === 1) {
-    if (!data.ownerName.trim()) errors.ownerName = 'שם חובה'
-    if (!data.ownerEmail.trim()) errors.ownerEmail = 'אימייל חובה'
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.ownerEmail))
-      errors.ownerEmail = 'אימייל לא תקין'
-  }
-  if (step === 2) {
-    if (!data.petType) errors.petType = 'יש לבחור סוג חיה'
-  }
-  if (step === 3) {
-    if (!data.petName.trim()) errors.petName = 'שם החיה חובה'
-    if (data.petAge && isNaN(Number(data.petAge))) errors.petAge = 'גיל לא תקין'
-  }
-  return errors
+function validate(screen: number, data: OnboardingData): Errors {
+  const e: Errors = {}
+  if (screen === 2 && !data.petType) e.petType = 'יש לבחור סוג חיה'
+  if (screen === 3 && !data.petName.trim()) e.petName = 'שם החיה חובה'
+  if (screen === 3 && data.petAge && isNaN(Number(data.petAge))) e.petAge = 'גיל לא תקין'
+  if (screen === 4 && !data.ownerName.trim()) e.ownerName = 'שם חובה'
+  if (screen === 4 && !data.ownerEmail.trim()) e.ownerEmail = 'אימייל חובה'
+  if (screen === 4 && data.ownerEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.ownerEmail))
+    e.ownerEmail = 'אימייל לא תקין'
+  return e
 }
 
 interface OnboardingPageProps {
@@ -47,134 +41,141 @@ interface OnboardingPageProps {
 
 export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onComplete }) => {
   const { user } = useAuth()
-  const [step, setStep] = useState(1)
-  const [done, setDone] = useState(false)
+  const [screen, setScreen] = useState(1)
   const [data, setData] = useState<OnboardingData>(initialData)
   const [errors, setErrors] = useState<Errors>({})
   const [saving, setSaving] = useState(false)
-  const [direction, setDirection] = useState<'forward' | 'back'>('forward')
-  const [animating, setAnimating] = useState(false)
+  const [direction, setDirection] = useState<'fwd' | 'back'>('fwd')
+  const [transitioning, setTransitioning] = useState(false)
 
-  const onChange = (field: keyof OnboardingData, value: string) => {
+  const onChange = useCallback((field: keyof OnboardingData, value: string) => {
     setData((prev) => ({ ...prev, [field]: value }))
-    if (errors[field]) setErrors((prev) => ({ ...prev, [field]: undefined }))
-  }
+    setErrors((prev) => ({ ...prev, [field]: undefined }))
+  }, [])
 
   const goTo = (next: number) => {
-    setDirection(next > step ? 'forward' : 'back')
-    setAnimating(true)
+    setDirection(next > screen ? 'fwd' : 'back')
+    setTransitioning(true)
     setTimeout(() => {
-      setStep(next)
-      setAnimating(false)
-    }, 180)
+      setScreen(next)
+      setTransitioning(false)
+    }, 200)
   }
 
   const handleNext = async () => {
-    const stepErrors = validate(step, data)
-    if (Object.keys(stepErrors).length > 0) {
-      setErrors(stepErrors)
-      return
-    }
+    const errs = validate(screen, data)
+    if (Object.keys(errs).length > 0) { setErrors(errs); return }
     setErrors({})
 
-    if (step === TOTAL_STEPS) {
-      await saveToSupabase()
-    } else {
-      goTo(step + 1)
+    // שמירה לפני מסך 6
+    if (screen === 5) {
+      await save()
+    } else if (screen < TOTAL) {
+      goTo(screen + 1)
     }
   }
 
-  const handleBack = () => {
-    if (step > 1) goTo(step - 1)
-  }
-
-  const saveToSupabase = async () => {
+  const save = async () => {
     setSaving(true)
     try {
-      const { error } = await supabase.from('onboarding').insert([
-        {
-          user_id: user?.id ?? null,
-          owner_name: data.ownerName,
-          owner_email: data.ownerEmail,
-          pet_type: data.petType,
-          pet_name: data.petName,
-          pet_age: data.petAge ? Number(data.petAge) : null,
-          pet_breed: data.petBreed || null,
-        },
-      ])
+      const { error } = await supabase.from('onboarding').insert([{
+        user_id: user?.id ?? null,
+        owner_name: data.ownerName,
+        owner_email: data.ownerEmail,
+        pet_type: data.petType,
+        pet_name: data.petName,
+        pet_age: data.petAge ? Number(data.petAge) : null,
+        pet_breed: data.petBreed || null,
+      }])
       if (error) throw error
-      setDone(true)
     } catch (err) {
-      console.error('Supabase save error:', err)
-      // גם אם Supabase לא מוגדר — ממשיכים להצגת ה-done screen
-      setDone(true)
+      console.error('Supabase error:', err)
     } finally {
       setSaving(false)
+      goTo(6)
     }
   }
 
-  const slideClass = animating
-    ? direction === 'forward'
-      ? 'opacity-0 -translate-x-4'
-      : 'opacity-0 translate-x-4'
+  // מסך 1 — Welcome (ללא progress bar / כפתורי ניווט)
+  if (screen === 1) {
+    return (
+      <div dir="rtl" className="min-h-screen bg-white flex flex-col">
+        <div className="flex-1 flex flex-col max-w-md w-full mx-auto">
+          <Screen1Welcome onNext={() => goTo(2)} />
+        </div>
+      </div>
+    )
+  }
+
+  // מסך 6 — Done (ללא progress bar / כפתורי ניווט)
+  if (screen === 6) {
+    return (
+      <div dir="rtl" className="min-h-screen bg-white flex flex-col">
+        <div className="flex-1 flex flex-col max-w-md w-full mx-auto">
+          <Screen6Done data={data} onFinish={() => onComplete?.()} />
+        </div>
+      </div>
+    )
+  }
+
+  // מסכים 2-5
+  const slideClass = transitioning
+    ? direction === 'fwd' ? 'opacity-0 translate-x-4' : 'opacity-0 -translate-x-4'
     : 'opacity-100 translate-x-0'
 
+  // מסך 5 — Features: כפתור "המשך" שומר ועובר ל-6
+  const isLast = screen === 5
+  const showNextLabel = isLast ? (saving ? 'שומר...' : 'בואו נתחיל!') : 'המשך'
+
   return (
-    <div
-      dir="rtl"
-      className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-fuchsia-50 flex items-center justify-center p-4"
-    >
-      <div className="w-full max-w-md">
-        {/* לוגו */}
-        <div className="text-center mb-8">
-          <span className="text-4xl font-black bg-gradient-to-r from-purple-500 via-violet-500 to-fuchsia-500 bg-clip-text text-transparent">
-            🐾 MIPO
-          </span>
+    <div dir="rtl" className="min-h-screen bg-white flex flex-col">
+      <div className="flex-1 flex flex-col max-w-md w-full mx-auto">
+
+        {/* Header */}
+        <div className="px-6 pt-10 pb-4 space-y-4">
+          <ProgressBar current={screen - 1} total={TOTAL - 2} />
+          <div className="flex items-center justify-between">
+            <button
+              onClick={() => goTo(screen - 1)}
+              className="text-gray-400 hover:text-gray-700 transition-colors p-1 -mr-1"
+              aria-label="חזרה"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <path d="M15 18l6-6-6-6" />
+              </svg>
+            </button>
+            <span className="text-xs text-gray-400">{screen - 1} / {TOTAL - 2}</span>
+          </div>
         </div>
 
-        <div className="bg-white rounded-3xl shadow-xl shadow-purple-100/60 border border-purple-100 p-6 sm:p-8">
-          {done ? (
-            <StepDone data={data} onFinish={() => onComplete?.()} />
-          ) : (
-            <>
-              {/* מד התקדמות */}
-              <div className="mb-8">
-                <StepIndicator current={step} total={TOTAL_STEPS} labels={STEP_LABELS} />
-              </div>
-
-              {/* תוכן השלב */}
-              <div className={`transition-all duration-200 ease-in-out ${slideClass}`}>
-                {step === 1 && <Step1Owner data={data} onChange={onChange} errors={errors} />}
-                {step === 2 && <Step2PetType data={data} onChange={onChange} errors={errors} />}
-                {step === 3 && <Step3PetDetails data={data} onChange={onChange} errors={errors} />}
-              </div>
-
-              {/* כפתורי ניווט */}
-              <div className="mt-8 flex gap-3">
-                {step > 1 && (
-                  <Button
-                    label="חזרה"
-                    variant="ghost"
-                    onClick={handleBack}
-                    className="flex-1"
-                  />
-                )}
-                <Button
-                  label={step === TOTAL_STEPS ? 'סיום ✓' : 'המשך'}
-                  onClick={handleNext}
-                  loading={saving}
-                  fullWidth={step === 1}
-                  className="flex-[2]"
-                />
-              </div>
-
-              {/* מונה שלבים */}
-              <p className="text-center text-xs text-gray-400 mt-4">
-                שלב {step} מתוך {TOTAL_STEPS}
-              </p>
-            </>
+        {/* תוכן */}
+        <div className={`flex-1 transition-all duration-200 ease-out ${slideClass}`}>
+          {screen === 2 && (
+            <Screen2PetType data={data} onChange={onChange} error={errors.petType} />
           )}
+          {screen === 3 && (
+            <Screen3PetDetails data={data} onChange={onChange} errors={errors} />
+          )}
+          {screen === 4 && (
+            <Screen4Owner data={data} onChange={onChange} errors={errors} />
+          )}
+          {screen === 5 && <Screen5Features />}
         </div>
+
+        {/* כפתור המשך */}
+        <div className="px-6 pb-10 pt-4">
+          <button
+            onClick={handleNext}
+            disabled={saving}
+            className="w-full py-4 rounded-2xl bg-[#7C3AED] text-white text-base font-semibold
+              shadow-lg shadow-purple-500/30 hover:bg-[#6D28D9] active:scale-[0.98]
+              disabled:opacity-60 disabled:cursor-not-allowed
+              transition-all duration-200"
+          >
+            {showNextLabel}
+          </button>
+        </div>
+
       </div>
     </div>
   )
