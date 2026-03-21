@@ -7,7 +7,7 @@ import { DashboardPage } from './pages/DashboardPage'
 import { ComingSoonPage } from './pages/ComingSoonPage'
 import { supabase } from './lib/supabase'
 
-const COMING_SOON = false // שנה ל-true להצגת דף Coming Soon
+const COMING_SOON = true
 
 type AppScreen = 'loading' | 'auth' | 'onboarding' | 'dashboard'
 
