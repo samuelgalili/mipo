@@ -3,6 +3,7 @@ name: CI/CD → Vercel + Mipo WhatsApp
 on:
   push:
     branches: [main]
+  workflow_dispatch: # הרצה ידנית מ-GitHub UI / CLI
 
 # מניעת ריצות כפולות אם נדחפו כמה commits ברצף
 concurrency:
