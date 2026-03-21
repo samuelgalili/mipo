@@ -41,14 +41,13 @@ jobs:
       # vercel build = vite build אבל עם פורמט .vercel/output/ תקני
       # VITE_* env vars מוגדרים בפרויקט ב-Vercel dashboard
       - name: Vercel build
-        # ${{ secrets.* }} מורחב ע"י Actions לפני הרצת bash —
-        # לכן אנחנו מנקים רווחים בbash עצמו לפני שה-CLI מקבל את ה-token
+        env:
+          RAW_TOKEN:         ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID:     ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
         run: |
-          RAW='${{ secrets.VERCEL_TOKEN }}'
-          export VERCEL_TOKEN="${RAW//[[:space:]]/}"
-          export VERCEL_ORG_ID='${{ secrets.VERCEL_ORG_ID }}'
-          export VERCEL_PROJECT_ID='${{ secrets.VERCEL_PROJECT_ID }}'
-          vercel build --prod --yes
+          CLEAN_TOKEN=$(echo "$RAW_TOKEN" | tr -cd 'a-zA-Z0-9_-')
+          vercel build --prod --yes --token "$CLEAN_TOKEN"
 
       - name: Upload .vercel/output artifact
         uses: actions/upload-artifact@v4
@@ -80,12 +79,13 @@ jobs:
 
       - name: Deploy prebuilt to production
         id: deploy
+        env:
+          RAW_TOKEN:         ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID:     ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
         run: |
-          RAW='${{ secrets.VERCEL_TOKEN }}'
-          export VERCEL_TOKEN="${RAW//[[:space:]]/}"
-          export VERCEL_ORG_ID='${{ secrets.VERCEL_ORG_ID }}'
-          export VERCEL_PROJECT_ID='${{ secrets.VERCEL_PROJECT_ID }}'
-          URL=$(vercel deploy --prebuilt --prod --yes)
+          CLEAN_TOKEN=$(echo "$RAW_TOKEN" | tr -cd 'a-zA-Z0-9_-')
+          URL=$(vercel deploy --prebuilt --prod --yes --token "$CLEAN_TOKEN")
           echo "url=$URL" >> "$GITHUB_OUTPUT"
           echo "✅ Deployed → $URL"
 
