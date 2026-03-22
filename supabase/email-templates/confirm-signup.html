@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>אשר את ההרשמה שלך ל-MIPO</title>
+</head>
+<body style="margin:0;padding:0;background-color:#f0f7ff;font-family:'Segoe UI',Arial,sans-serif;direction:rtl;">
+
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f0f7ff;padding:40px 16px;">
+    <tr>
+      <td align="center">
+        <table width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;">
+
+          <!-- לוגו + כותרת עליונה -->
+          <tr>
+            <td align="center" style="padding-bottom:24px;">
+              <table cellpadding="0" cellspacing="0">
+                <tr>
+                  <td align="center">
+                    <!-- לוגו MIPO SVG -->
+                    <svg viewBox="0 0 100 100" width="72" height="72" xmlns="http://www.w3.org/2000/svg">
+                      <defs>
+                        <linearGradient id="g1" x1="0" y1="0" x2="100" y2="100" gradientUnits="userSpaceOnUse">
+                          <stop offset="0%"   stop-color="#0099E6"/>
+                          <stop offset="50%"  stop-color="#0077BB"/>
+                          <stop offset="100%" stop-color="#005599"/>
+                        </linearGradient>
+                      </defs>
+                      <path
+                        d="M18 78 L18 34 C18 22,26 16,36 16 C44 16,49 22,50 32 C51 22,56 16,64 16 C74 16,82 22,82 34 L82 78"
+                        stroke="url(#g1)" stroke-width="8" stroke-linecap="round" fill="none"
+                      />
+                      <circle cx="50" cy="58" r="5.5" fill="url(#g1)"/>
+                    </svg>
+                  </td>
+                </tr>
+                <tr>
+                  <td align="center" style="padding-top:8px;">
+                    <span style="font-size:22px;font-weight:800;color:#0077BB;letter-spacing:-0.5px;">MIPO</span>
+                    <span style="font-size:20px;margin-right:4px;">🐾</span>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- כרטיס ראשי -->
+          <tr>
+            <td style="background:#ffffff;border-radius:20px;overflow:hidden;box-shadow:0 4px 24px rgba(0,120,200,0.10);">
+
+              <!-- פס תכלת עליון -->
+              <table width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td style="height:5px;background:linear-gradient(90deg,#0099E6,#00BBFF,#0077BB);border-radius:20px 20px 0 0;"></td>
+                </tr>
+              </table>
+
+              <!-- תוכן -->
+              <table width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td style="padding:40px 40px 16px 40px;text-align:center;">
+
+                    <!-- אייקון -->
+                    <div style="width:64px;height:64px;background:linear-gradient(135deg,#e0f4ff,#b3e5fc);border-radius:50%;margin:0 auto 24px;display:inline-block;line-height:64px;font-size:32px;">
+                      ✉️
+                    </div>
+
+                    <!-- כותרת -->
+                    <h1 style="margin:0 0 12px;font-size:24px;font-weight:800;color:#0a1a2e;line-height:1.3;">
+                      ברוכים הבאים ל-MIPO! 🐾
+                    </h1>
+
+                    <!-- טקסט -->
+                    <p style="margin:0 0 8px;font-size:15px;color:#4a5568;line-height:1.7;">
+                      תודה שנרשמת! אנחנו שמחים שאתם כאן.
+                    </p>
+                    <p style="margin:0 0 32px;font-size:15px;color:#4a5568;line-height:1.7;">
+                      לחצו על הכפתור למטה כדי לאמת את כתובת האימייל שלכם ולהתחיל את המסע עם חיית המחמד שלכם.
+                    </p>
+
+                    <!-- כפתור -->
+                    <table cellpadding="0" cellspacing="0" style="margin:0 auto;">
+                      <tr>
+                        <td align="center" style="border-radius:14px;overflow:hidden;">
+                          <a
+                            href="{{ .ConfirmationURL }}"
+                            style="display:inline-block;padding:16px 40px;background:linear-gradient(135deg,#0099E6,#0077BB);color:#ffffff;font-size:16px;font-weight:700;text-decoration:none;border-radius:14px;letter-spacing:0.2px;box-shadow:0 4px 16px rgba(0,120,200,0.30);"
+                          >
+                            אשר את החשבון שלי
+                          </a>
+                        </td>
+                      </tr>
+                    </table>
+
+                    <!-- הערה על תוקף -->
+                    <p style="margin:24px 0 0;font-size:12px;color:#90a0b0;">
+                      הקישור בתוקף ל-24 שעות בלבד
+                    </p>
+
+                  </td>
+                </tr>
+
+                <!-- קו הפרדה -->
+                <tr>
+                  <td style="padding:0 40px;">
+                    <hr style="border:none;border-top:1px solid #e8f4ff;margin:8px 0 24px;">
+                  </td>
+                </tr>
+
+                <!-- פסקת עזרה -->
+                <tr>
+                  <td style="padding:0 40px 32px;text-align:center;">
+                    <p style="margin:0;font-size:13px;color:#718096;line-height:1.6;">
+                      אם לא נרשמתם ל-MIPO — אפשר להתעלם מהמייל הזה בבטחה.<br>
+                      לעזרה: <a href="mailto:support@mipo.pet" style="color:#0099E6;text-decoration:none;font-weight:600;">support@mipo.pet</a>
+                    </p>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- פס תכלת תחתון -->
+              <table width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td style="height:4px;background:linear-gradient(90deg,#0077BB,#0099E6,#00BBFF);border-radius:0 0 20px 20px;"></td>
+                </tr>
+              </table>
+
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="padding:24px 0 0;text-align:center;">
+              <p style="margin:0;font-size:12px;color:#90a4b8;line-height:1.7;">
+                MIPO — החבר הדיגיטלי של חיית המחמד שלך 🐾<br>
+                <a href="https://mipo.pet" style="color:#0099E6;text-decoration:none;">mipo.pet</a>
+                &nbsp;·&nbsp;
+                <a href="https://mipo.pet/privacy" style="color:#0099E6;text-decoration:none;">פרטיות</a>
+                &nbsp;·&nbsp;
+                <a href="https://mipo.pet/terms" style="color:#0099E6;text-decoration:none;">תנאי שימוש</a>
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+
+</body>
+</html>

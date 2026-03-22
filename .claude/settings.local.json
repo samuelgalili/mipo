@@ -17,7 +17,25 @@
       "Bash(git push:*)",
       "Bash(vercel env:*)",
       "Bash(vercel:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(gh secret:*)",
+      "Bash(gh workflow:*)",
+      "Bash(gh run:*)",
+      "Bash(echo \"EXIT:$?\")",
+      "Bash(kill 18055)",
+      "Bash(launchctl list:*)",
+      "Bash(launchctl stop:*)",
+      "Bash(launchctl load:*)",
+      "Bash(curl -s https://mipo-api-production.up.railway.app/health)",
+      "Bash(curl:*)",
+      "Bash(railway status:*)",
+      "Bash(railway link:*)",
+      "Bash(railway login:*)",
+      "Bash(railway redeploy:*)",
+      "Bash(railway logs:*)",
+      "Bash(railway up:*)",
+      "Bash(python3 -c \":*)",
+      "Bash(grep -v '^$')"
     ]
   }
 }

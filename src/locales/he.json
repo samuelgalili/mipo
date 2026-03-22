@@ -1,0 +1,131 @@
+{
+  "common": {
+    "appName": "MIPO",
+    "appTagline": "מיפו — כי הוא האוצר שלך 🐾",
+    "continue": "המשך",
+    "back": "חזרה",
+    "saving": "שומר...",
+    "loading": "טוען...",
+    "backToHome": "חזרה לדף הבית"
+  },
+  "pets": {
+    "dog":    { "label": "כלב",  "hint": "גולדן, לברדור, מעורב..." },
+    "cat":    { "label": "חתול", "hint": "פרסי, מיין קון, מעורב..." },
+    "rabbit": { "label": "ארנב", "hint": "ארנב ננסי, לופ, מעורב..." },
+    "parrot": { "label": "תוכי", "hint": "קוקטייל, אמזון, מקאו..." }
+  },
+  "auth": {
+    "login": "התחברות",
+    "register": "הרשמה",
+    "email": "אימייל",
+    "password": "סיסמה",
+    "passwordPlaceholder": "לפחות 6 תווים",
+    "loginBtn": "התחבר",
+    "registerBtn": "צור חשבון",
+    "noAccount": "אין לך חשבון?",
+    "alreadyRegistered": "כבר רשום?",
+    "registerLink": "הירשם",
+    "loginLink": "התחבר",
+    "checkEmail": "בדוק את האימייל שלך",
+    "sentLink": "שלחנו לינק אימות ל-",
+    "backToLogin": "חזרה להתחברות",
+    "errors": {
+      "emailRequired": "אימייל חובה",
+      "emailInvalid": "אימייל לא תקין",
+      "passwordRequired": "סיסמה חובה",
+      "passwordMin": "סיסמה חייבת להיות לפחות 6 תווים",
+      "invalidCredentials": "אימייל או סיסמה שגויים",
+      "alreadyRegistered": "האימייל כבר רשום — נסה להתחבר"
+    }
+  },
+  "onboarding": {
+    "nextBtn": "המשך",
+    "startBtn": "בואו נתחיל!",
+    "screen1": {
+      "title": "ברוכים הבאים",
+      "titleHighlight": "ל-MIPO",
+      "subtitle": "הפלטפורמה שמחברת אתכם\nלחיות המחמד שלכם",
+      "cta": "בואו נתחיל 🐾"
+    },
+    "screen2": {
+      "title": "איזו חיה\ניש לך?",
+      "subtitle": "בחר סוג — ניתן להוסיף עוד מאוחר",
+      "error": "יש לבחור סוג חיה"
+    },
+    "screen3": {
+      "title": "פרטי ה{{pet}}\nשלך",
+      "nameLabel": "שם",
+      "namePlaceholder": "בובו, לונה, ריו...",
+      "ageLabel": "גיל",
+      "breedLabel": "גזע",
+      "breedPlaceholder": "מעורב...",
+      "detecting": "מזהה גזע...",
+      "confidence": {
+        "high": "זיהוי בטוח",
+        "medium": "זיהוי סביר",
+        "low": "לא בטוח"
+      },
+      "errors": {
+        "nameRequired": "שם החיה חובה",
+        "ageInvalid": "גיל לא תקין"
+      }
+    },
+    "screen4": {
+      "title": "ואיך\nקוראים לך?",
+      "subtitle": "הפרטים שלך בלבד",
+      "fullName": "שם מלא",
+      "namePlaceholder": "ישראל ישראלי",
+      "email": "אימייל",
+      "errors": {
+        "nameRequired": "שם חובה",
+        "emailRequired": "אימייל חובה",
+        "emailInvalid": "אימייל לא תקין"
+      }
+    },
+    "screen5": {
+      "title": "מה מחכה לכם\nב-MIPO",
+      "subtitle": "בנינו את זה בשבילכם 🐾",
+      "features": [
+        { "icon": "🤝", "title": "Dog Companion", "desc": "ליווי יומיומי — תזכורות, טיפים, ואהבה" },
+        { "icon": "🪞", "title": "Parallel Life", "desc": "ראה את העולם מנקודת המבט של החיה שלך" },
+        { "icon": "🤖", "title": "AI Chat", "desc": "שוחח עם Mipo — הבינה המלאכותית שמכירה את החיה שלך" },
+        { "icon": "🛍️", "title": "חנות", "desc": "מוצרים מותאמים אישית לחיה שלך" }
+      ]
+    },
+    "screen6": {
+      "readyTitle": "{{petName}} ו{{ownerName}} מוכנים!",
+      "welcome": "ברוכים הבאים למשפחת MIPO 🐾",
+      "breedLabel": "גזע",
+      "ageLabel": "גיל",
+      "years": "שנים",
+      "dashboardBtn": "אל הדשבורד 🐾"
+    }
+  },
+  "dashboard": {
+    "hello": "שלום! 👋",
+    "petsSubtitle": "הנה חיות המחמד שלך",
+    "noPets": "עדיין אין חיות מחמד",
+    "signOut": "יציאה",
+    "age": "גיל {{age}}"
+  },
+  "chat": {
+    "typing": "מקליד...",
+    "ready": "מוכן לשיחה",
+    "emptyTitle": "היי, אני Mipo!",
+    "emptySubtitle": "החבר הדיגיטלי של חיית המחמד שלך. שאל אותי כל שאלה — על אכילה, התנהגות, בריאות ועוד.",
+    "placeholder": "שאל את Mipo על {{pet}}...",
+    "disclaimer": "Mipo לא מחליף ייעוץ וטרינרי מקצועי",
+    "suggestions": [
+      "איך לדעת אם הכלב שלי שמח?",
+      "כמה פעמים ליום להאכיל?",
+      "מה לעשות אם הוא לא ישן?",
+      "איזה צעצוע מתאים?"
+    ]
+  },
+  "callback": {
+    "verifying": "מאמת את החשבון שלך...",
+    "success": "החשבון אומת בהצלחה!",
+    "redirecting": "מעביר אותך לאפליקציה...",
+    "errorTitle": "שגיאה באימות"
+  }
+}

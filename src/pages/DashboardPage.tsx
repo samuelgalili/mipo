@@ -47,16 +47,16 @@ export const DashboardPage: React.FC = () => {
   )
 
   return (
-    <div dir="rtl" className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-fuchsia-50">
+    <div className="min-h-screen bg-background">
 
       {/* Header */}
-      <header className="bg-white border-b border-purple-100 shadow-sm shadow-purple-50">
+      <header className="bg-card border-b border-border shadow-sm">
         <div className="max-w-2xl mx-auto px-4 py-4 flex items-center justify-between">
-          <span className="text-2xl font-black bg-gradient-to-r from-purple-500 via-violet-500 to-fuchsia-500 bg-clip-text text-transparent">
+          <span className="text-2xl font-black text-primary">
             🐾 MIPO
           </span>
           <div className="flex items-center gap-3">
-            <span className="text-sm text-gray-400 hidden sm:block">{user?.email}</span>
+            <span className="text-sm text-muted-foreground hidden sm:block">{user?.email}</span>
             <Button label="יציאה" variant="ghost" size="sm" onClick={signOut} />
           </div>
         </div>
@@ -66,30 +66,30 @@ export const DashboardPage: React.FC = () => {
       <main className="max-w-2xl mx-auto px-4 py-8 space-y-6">
 
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">שלום! 👋</h1>
-          <p className="text-gray-400 text-sm mt-1">הנה חיות המחמד שלך</p>
+          <h1 className="text-2xl font-bold text-foreground">שלום! 👋</h1>
+          <p className="text-muted-foreground text-sm mt-1">הנה חיות המחמד שלך</p>
         </div>
 
         {loading ? (
           <div className="flex justify-center py-16">
-            <div className="w-8 h-8 rounded-full border-4 border-purple-200 border-t-purple-500 animate-spin" />
+            <div className="w-8 h-8 rounded-full border-4 border-primary/20 border-t-primary animate-spin" />
           </div>
         ) : pets.length === 0 ? (
           <Card variant="flat" className="text-center py-12 space-y-3">
             <div className="text-5xl">🐾</div>
-            <p className="text-gray-500">עדיין אין חיות מחמד</p>
+            <p className="text-muted-foreground">עדיין אין חיות מחמד</p>
           </Card>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2">
             {pets.map((pet) => (
               <Card key={pet.id} hover variant="gradient">
                 <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-100 to-fuchsia-100 flex items-center justify-center text-3xl shrink-0">
+                  <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center text-3xl shrink-0">
                     {getPetEmoji(pet.pet_type)}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <h3 className="font-bold text-gray-800 text-lg leading-tight">{pet.pet_name}</h3>
-                    <p className="text-sm text-gray-400">
+                    <h3 className="font-bold text-foreground text-lg leading-tight">{pet.pet_name}</h3>
+                    <p className="text-sm text-muted-foreground">
                       {getPetLabel(pet.pet_type)}
                       {pet.pet_breed ? ` · ${pet.pet_breed}` : ''}
                       {pet.pet_age != null ? ` · גיל ${pet.pet_age}` : ''}
@@ -97,7 +97,7 @@ export const DashboardPage: React.FC = () => {
                   </div>
                   <button
                     onClick={() => setChatPet(pet)}
-                    className="flex-shrink-0 w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-fuchsia-500 flex items-center justify-center text-white shadow-md shadow-purple-200 hover:opacity-90 active:scale-95 transition-all"
+                    className="flex-shrink-0 w-10 h-10 rounded-xl bg-gradient-primary flex items-center justify-center text-white shadow-button hover:shadow-button-hover hover:opacity-90 active:scale-95 transition-all"
                     title={`שוחח עם Mipo על ${pet.pet_name}`}
                   >
                     🐾

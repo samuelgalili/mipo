@@ -1,0 +1,131 @@
+{
+  "common": {
+    "appName": "MIPO",
+    "appTagline": "MIPO — My Precious One 🐾",
+    "continue": "Continue",
+    "back": "Back",
+    "saving": "Saving...",
+    "loading": "Loading...",
+    "backToHome": "Back to home"
+  },
+  "pets": {
+    "dog":    { "label": "Dog",    "hint": "Golden, Labrador, Mixed..." },
+    "cat":    { "label": "Cat",    "hint": "Persian, Maine Coon, Mixed..." },
+    "rabbit": { "label": "Rabbit", "hint": "Dwarf, Lop, Mixed..." },
+    "parrot": { "label": "Parrot", "hint": "Cockatiel, Amazon, Macaw..." }
+  },
+  "auth": {
+    "login": "Sign In",
+    "register": "Sign Up",
+    "email": "Email",
+    "password": "Password",
+    "passwordPlaceholder": "At least 6 characters",
+    "loginBtn": "Sign In",
+    "registerBtn": "Create Account",
+    "noAccount": "Don't have an account?",
+    "alreadyRegistered": "Already registered?",
+    "registerLink": "Sign up",
+    "loginLink": "Sign in",
+    "checkEmail": "Check your email",
+    "sentLink": "We sent a confirmation link to ",
+    "backToLogin": "Back to login",
+    "errors": {
+      "emailRequired": "Email is required",
+      "emailInvalid": "Invalid email address",
+      "passwordRequired": "Password is required",
+      "passwordMin": "Password must be at least 6 characters",
+      "invalidCredentials": "Invalid email or password",
+      "alreadyRegistered": "Email already registered — try signing in"
+    }
+  },
+  "onboarding": {
+    "nextBtn": "Continue",
+    "startBtn": "Let's go!",
+    "screen1": {
+      "title": "Welcome to",
+      "titleHighlight": "MIPO",
+      "subtitle": "The platform connecting you\nwith your pets",
+      "cta": "Let's get started 🐾"
+    },
+    "screen2": {
+      "title": "What pet\ndo you have?",
+      "subtitle": "Choose a type — you can add more later",
+      "error": "Please select a pet type"
+    },
+    "screen3": {
+      "title": "Your {{pet}}'s\nDetails",
+      "nameLabel": "Name",
+      "namePlaceholder": "Buddy, Luna, Rio...",
+      "ageLabel": "Age",
+      "breedLabel": "Breed",
+      "breedPlaceholder": "Mixed...",
+      "detecting": "Detecting breed...",
+      "confidence": {
+        "high": "High confidence",
+        "medium": "Medium confidence",
+        "low": "Low confidence"
+      },
+      "errors": {
+        "nameRequired": "Pet name is required",
+        "ageInvalid": "Invalid age"
+      }
+    },
+    "screen4": {
+      "title": "And what's\nyour name?",
+      "subtitle": "Just your details",
+      "fullName": "Full Name",
+      "namePlaceholder": "John Smith",
+      "email": "Email",
+      "errors": {
+        "nameRequired": "Name is required",
+        "emailRequired": "Email is required",
+        "emailInvalid": "Invalid email address"
+      }
+    },
+    "screen5": {
+      "title": "What awaits you\nat MIPO",
+      "subtitle": "We built this for you 🐾",
+      "features": [
+        { "icon": "🤝", "title": "Pet Companion", "desc": "Daily companionship — reminders, tips, and love" },
+        { "icon": "🪞", "title": "Parallel Life", "desc": "See the world from your pet's perspective" },
+        { "icon": "🤖", "title": "AI Chat", "desc": "Chat with Mipo — the AI that knows your pet" },
+        { "icon": "🛍️", "title": "Shop", "desc": "Products personalized for your pet" }
+      ]
+    },
+    "screen6": {
+      "readyTitle": "{{petName}} and {{ownerName}} are ready!",
+      "welcome": "Welcome to the MIPO family 🐾",
+      "breedLabel": "Breed",
+      "ageLabel": "Age",
+      "years": "years",
+      "dashboardBtn": "Go to Dashboard 🐾"
+    }
+  },
+  "dashboard": {
+    "hello": "Hello! 👋",
+    "petsSubtitle": "Here are your pets",
+    "noPets": "No pets yet",
+    "signOut": "Sign out",
+    "age": "Age {{age}}"
+  },
+  "chat": {
+    "typing": "Typing...",
+    "ready": "Ready to chat",
+    "emptyTitle": "Hey, I'm Mipo!",
+    "emptySubtitle": "Your pet's digital companion. Ask me anything — about food, behavior, health and more.",
+    "placeholder": "Ask Mipo about {{pet}}...",
+    "disclaimer": "Mipo does not replace professional veterinary advice",
+    "suggestions": [
+      "How do I know if my dog is happy?",
+      "How many times a day to feed?",
+      "What if my pet won't sleep?",
+      "Which toy is suitable?"
+    ]
+  },
+  "callback": {
+    "verifying": "Verifying your account...",
+    "success": "Account verified successfully!",
+    "redirecting": "Redirecting to app...",
+    "errorTitle": "Verification Error"
+  }
+}

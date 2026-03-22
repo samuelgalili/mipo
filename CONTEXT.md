@@ -12,8 +12,18 @@
 | Styling | Tailwind CSS |
 | DB / Auth | Supabase |
 | Deploy | Vercel |
+| Backend | Google Cloud Run — `europe-west1` |
 | VPS | Contabo — `207.180.204.110` |
 | Domain | Namecheap → mipo.pet |
+
+## כתובות שירותים
+| שירות | URL |
+|-------|-----|
+| Frontend | `https://mipo.pet` |
+| Backend (Cloud Run) | `https://mipo-backend-ppfs2l2ufq-ew.a.run.app` |
+| Health Check | `https://mipo-backend-ppfs2l2ufq-ew.a.run.app/health` |
+| Supabase | `https://wfjjcqzlaqdslifkgayw.supabase.co` |
+| GCP Project | `calcium-spanner-449711-u1` |
 
 ## עיצוב
 - **רקע:** לבן (`#FFFFFF`)

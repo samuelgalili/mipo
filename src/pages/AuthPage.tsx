@@ -1,11 +1,14 @@
 import React, { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { supabase } from '../lib/supabase'
 import { Input } from '../components/ui/Input'
 import { Button } from '../components/ui/Button'
+import { LanguageSwitcher } from '../components/ui/LanguageSwitcher'
 
 type Mode = 'login' | 'register'
 
 export const AuthPage: React.FC = () => {
+  const { t } = useTranslation()
   const [mode, setMode] = useState<Mode>('login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -15,10 +18,10 @@ export const AuthPage: React.FC = () => {
 
   const validate = () => {
     const e: typeof errors = {}
-    if (!email.trim()) e.email = 'אימייל חובה'
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) e.email = 'אימייל לא תקין'
-    if (!password) e.password = 'סיסמה חובה'
-    else if (password.length < 6) e.password = 'סיסמה חייבת להיות לפחות 6 תווים'
+    if (!email.trim()) e.email = t('auth.errors.emailRequired')
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) e.email = t('auth.errors.emailInvalid')
+    if (!password) e.password = t('auth.errors.passwordRequired')
+    else if (password.length < 6) e.password = t('auth.errors.passwordMin')
     return e
   }
 
@@ -37,12 +40,11 @@ export const AuthPage: React.FC = () => {
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password })
         if (error) throw error
-        // AuthContext יתפוס את השינוי ו-App יעבור למסך הבא
       }
     } catch (err: any) {
-      const msg = err?.message ?? 'שגיאה לא צפויה'
-      if (msg.includes('Invalid login')) setErrors({ general: 'אימייל או סיסמה שגויים' })
-      else if (msg.includes('already registered')) setErrors({ general: 'האימייל כבר רשום — נסה להתחבר' })
+      const msg = err?.message ?? ''
+      if (msg.includes('Invalid login')) setErrors({ general: t('auth.errors.invalidCredentials') })
+      else if (msg.includes('already registered')) setErrors({ general: t('auth.errors.alreadyRegistered') })
       else setErrors({ general: msg })
     } finally {
       setLoading(false)
@@ -51,16 +53,16 @@ export const AuthPage: React.FC = () => {
 
   if (registered) {
     return (
-      <div dir="rtl" className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-fuchsia-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-fuchsia-50 flex items-center justify-center p-4">
         <div className="w-full max-w-md bg-white rounded-3xl shadow-xl shadow-purple-100/60 border border-purple-100 p-8 text-center space-y-4">
           <div className="text-5xl">📬</div>
-          <h2 className="text-xl font-bold text-gray-800">בדוק את האימייל שלך</h2>
-          <p className="text-gray-500 text-sm">שלחנו לינק אימות ל-<strong>{email}</strong></p>
+          <h2 className="text-xl font-bold text-gray-800">{t('auth.checkEmail')}</h2>
+          <p className="text-gray-500 text-sm">{t('auth.sentLink')}<strong>{email}</strong></p>
           <button
             onClick={() => { setRegistered(false); setMode('login') }}
             className="text-sm text-purple-500 hover:underline"
           >
-            חזרה להתחברות
+            {t('auth.backToLogin')}
           </button>
         </div>
       </div>
@@ -68,15 +70,18 @@ export const AuthPage: React.FC = () => {
   }
 
   return (
-    <div dir="rtl" className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-fuchsia-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-fuchsia-50 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
 
         {/* לוגו */}
-        <div className="text-center mb-8">
+        <div className="text-center mb-8 relative">
           <span className="text-4xl font-black bg-gradient-to-r from-purple-500 via-violet-500 to-fuchsia-500 bg-clip-text text-transparent">
             🐾 MIPO
           </span>
-          <p className="text-gray-400 text-sm mt-1">הפלטפורמה לחיות המחמד שלך</p>
+          <p className="text-gray-400 text-sm mt-1">{t('common.appTagline')}</p>
+          <div className="absolute top-0 end-0">
+            <LanguageSwitcher />
+          </div>
         </div>
 
         <div className="bg-white rounded-3xl shadow-xl shadow-purple-100/60 border border-purple-100 p-8">
@@ -94,7 +99,7 @@ export const AuthPage: React.FC = () => {
                     : 'text-gray-400 hover:text-purple-500',
                 ].join(' ')}
               >
-                {m === 'login' ? 'התחברות' : 'הרשמה'}
+                {m === 'login' ? t('auth.login') : t('auth.register')}
               </button>
             ))}
           </div>
@@ -102,7 +107,7 @@ export const AuthPage: React.FC = () => {
           {/* טופס */}
           <form onSubmit={handleSubmit} className="space-y-4" noValidate>
             <Input
-              label="אימייל"
+              label={t('auth.email')}
               type="email"
               placeholder="israel@example.com"
               value={email}
@@ -113,9 +118,9 @@ export const AuthPage: React.FC = () => {
               autoComplete="email"
             />
             <Input
-              label="סיסמה"
+              label={t('auth.password')}
               type="password"
-              placeholder={mode === 'register' ? 'לפחות 6 תווים' : '••••••••'}
+              placeholder={mode === 'register' ? t('auth.passwordPlaceholder') : '••••••••'}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               error={errors.password}
@@ -131,7 +136,7 @@ export const AuthPage: React.FC = () => {
             )}
 
             <Button
-              label={mode === 'login' ? 'התחבר' : 'צור חשבון'}
+              label={mode === 'login' ? t('auth.loginBtn') : t('auth.registerBtn')}
               type="submit"
               loading={loading}
               fullWidth
@@ -141,12 +146,12 @@ export const AuthPage: React.FC = () => {
 
           {/* החלפת מצב */}
           <p className="text-center text-sm text-gray-400 mt-4">
-            {mode === 'login' ? 'אין לך חשבון? ' : 'כבר רשום? '}
+            {mode === 'login' ? t('auth.noAccount') : t('auth.alreadyRegistered')}{' '}
             <button
               onClick={() => { setMode(mode === 'login' ? 'register' : 'login'); setErrors({}) }}
               className="text-purple-500 font-semibold hover:underline"
             >
-              {mode === 'login' ? 'הירשם' : 'התחבר'}
+              {mode === 'login' ? t('auth.registerLink') : t('auth.loginLink')}
             </button>
           </p>
         </div>

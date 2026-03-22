@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import type { OnboardingData } from '../types/onboarding'
@@ -23,23 +24,12 @@ const initialData: OnboardingData = {
 
 type Errors = Partial<Record<keyof OnboardingData, string>>
 
-function validate(screen: number, data: OnboardingData): Errors {
-  const e: Errors = {}
-  if (screen === 2 && !data.petType) e.petType = 'יש לבחור סוג חיה'
-  if (screen === 3 && !data.petName.trim()) e.petName = 'שם החיה חובה'
-  if (screen === 3 && data.petAge && isNaN(Number(data.petAge))) e.petAge = 'גיל לא תקין'
-  if (screen === 4 && !data.ownerName.trim()) e.ownerName = 'שם חובה'
-  if (screen === 4 && !data.ownerEmail.trim()) e.ownerEmail = 'אימייל חובה'
-  if (screen === 4 && data.ownerEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.ownerEmail))
-    e.ownerEmail = 'אימייל לא תקין'
-  return e
-}
-
 interface OnboardingPageProps {
   onComplete?: () => void
 }
 
 export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onComplete }) => {
+  const { t } = useTranslation()
   const { user } = useAuth()
   const [screen, setScreen] = useState(1)
   const [data, setData] = useState<OnboardingData>(initialData)
@@ -47,6 +37,18 @@ export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onComplete }) =>
   const [saving, setSaving] = useState(false)
   const [direction, setDirection] = useState<'fwd' | 'back'>('fwd')
   const [transitioning, setTransitioning] = useState(false)
+
+  const validate = (s: number, d: OnboardingData): Errors => {
+    const e: Errors = {}
+    if (s === 2 && !d.petType)           e.petType  = t('onboarding.screen2.error')
+    if (s === 3 && !d.petName.trim())    e.petName  = t('onboarding.screen3.errors.nameRequired')
+    if (s === 3 && d.petAge && isNaN(Number(d.petAge))) e.petAge = t('onboarding.screen3.errors.ageInvalid')
+    if (s === 4 && !d.ownerName.trim())  e.ownerName  = t('onboarding.screen4.errors.nameRequired')
+    if (s === 4 && !d.ownerEmail.trim()) e.ownerEmail = t('onboarding.screen4.errors.emailRequired')
+    if (s === 4 && d.ownerEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(d.ownerEmail))
+      e.ownerEmail = t('onboarding.screen4.errors.emailInvalid')
+    return e
+  }
 
   const onChange = useCallback((field: keyof OnboardingData, value: string) => {
     setData((prev) => ({ ...prev, [field]: value }))
@@ -56,18 +58,13 @@ export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onComplete }) =>
   const goTo = (next: number) => {
     setDirection(next > screen ? 'fwd' : 'back')
     setTransitioning(true)
-    setTimeout(() => {
-      setScreen(next)
-      setTransitioning(false)
-    }, 200)
+    setTimeout(() => { setScreen(next); setTransitioning(false) }, 200)
   }
 
   const handleNext = async () => {
     const errs = validate(screen, data)
     if (Object.keys(errs).length > 0) { setErrors(errs); return }
     setErrors({})
-
-    // שמירה לפני מסך 6
     if (screen === 5) {
       await save()
     } else if (screen < TOTAL) {
@@ -79,13 +76,13 @@ export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onComplete }) =>
     setSaving(true)
     try {
       const { error } = await supabase.from('onboarding').insert([{
-        user_id: user?.id ?? null,
+        user_id:    user?.id ?? null,
         owner_name: data.ownerName,
-        owner_email: data.ownerEmail,
-        pet_type: data.petType,
-        pet_name: data.petName,
-        pet_age: data.petAge ? Number(data.petAge) : null,
-        pet_breed: data.petBreed || null,
+        owner_email:data.ownerEmail,
+        pet_type:   data.petType,
+        pet_name:   data.petName,
+        pet_age:    data.petAge ? Number(data.petAge) : null,
+        pet_breed:  data.petBreed || null,
       }])
       if (error) throw error
     } catch (err) {
@@ -96,10 +93,9 @@ export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onComplete }) =>
     }
   }
 
-  // מסך 1 — Welcome (ללא progress bar / כפתורי ניווט)
   if (screen === 1) {
     return (
-      <div dir="rtl" className="min-h-screen bg-white flex flex-col">
+      <div className="min-h-screen bg-background flex flex-col">
         <div className="flex-1 flex flex-col max-w-md w-full mx-auto">
           <Screen1Welcome onNext={() => goTo(2)} />
         </div>
@@ -107,10 +103,9 @@ export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onComplete }) =>
     )
   }
 
-  // מסך 6 — Done (ללא progress bar / כפתורי ניווט)
   if (screen === 6) {
     return (
-      <div dir="rtl" className="min-h-screen bg-white flex flex-col">
+      <div className="min-h-screen bg-background flex flex-col">
         <div className="flex-1 flex flex-col max-w-md w-full mx-auto">
           <Screen6Done data={data} onFinish={() => onComplete?.()} />
         </div>
@@ -118,17 +113,15 @@ export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onComplete }) =>
     )
   }
 
-  // מסכים 2-5
   const slideClass = transitioning
     ? direction === 'fwd' ? 'opacity-0 translate-x-4' : 'opacity-0 -translate-x-4'
     : 'opacity-100 translate-x-0'
 
-  // מסך 5 — Features: כפתור "המשך" שומר ועובר ל-6
   const isLast = screen === 5
-  const showNextLabel = isLast ? (saving ? 'שומר...' : 'בואו נתחיל!') : 'המשך'
+  const showNextLabel = isLast ? (saving ? t('common.saving') : t('onboarding.startBtn')) : t('onboarding.nextBtn')
 
   return (
-    <div dir="rtl" className="min-h-screen bg-white flex flex-col">
+    <div className="min-h-screen bg-background flex flex-col" dir="rtl">
       <div className="flex-1 flex flex-col max-w-md w-full mx-auto">
 
         {/* Header */}
@@ -137,28 +130,22 @@ export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onComplete }) =>
           <div className="flex items-center justify-between">
             <button
               onClick={() => goTo(screen - 1)}
-              className="text-gray-400 hover:text-gray-700 transition-colors p-1 -mr-1"
-              aria-label="חזרה"
+              className="text-muted-foreground hover:text-foreground transition-colors p-1 -mr-1"
+              aria-label={t('common.back')}
             >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
                 <path d="M15 18l6-6-6-6" />
               </svg>
             </button>
-            <span className="text-xs text-gray-400">{screen - 1} / {TOTAL - 2}</span>
+            <span className="text-xs text-muted-foreground">{screen - 1} / {TOTAL - 2}</span>
           </div>
         </div>
 
         {/* תוכן */}
         <div className={`flex-1 transition-all duration-200 ease-out ${slideClass}`}>
-          {screen === 2 && (
-            <Screen2PetType data={data} onChange={onChange} error={errors.petType} />
-          )}
-          {screen === 3 && (
-            <Screen3PetDetails data={data} onChange={onChange} errors={errors} />
-          )}
-          {screen === 4 && (
-            <Screen4Owner data={data} onChange={onChange} errors={errors} />
-          )}
+          {screen === 2 && <Screen2PetType data={data} onChange={onChange} error={errors.petType} />}
+          {screen === 3 && <Screen3PetDetails data={data} onChange={onChange} errors={errors} />}
+          {screen === 4 && <Screen4Owner data={data} onChange={onChange} errors={errors} />}
           {screen === 5 && <Screen5Features />}
         </div>
 
@@ -167,8 +154,8 @@ export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onComplete }) =>
           <button
             onClick={handleNext}
             disabled={saving}
-            className="w-full py-4 rounded-2xl bg-[#7C3AED] text-white text-base font-semibold
-              shadow-lg shadow-purple-500/30 hover:bg-[#6D28D9] active:scale-[0.98]
+            className="w-full py-4 rounded-xl bg-gradient-primary text-white text-base font-semibold
+              shadow-button hover:shadow-button-hover hover:opacity-95 active:scale-[0.98]
               disabled:opacity-60 disabled:cursor-not-allowed
               transition-all duration-200"
           >

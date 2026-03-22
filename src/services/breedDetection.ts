@@ -6,17 +6,19 @@ export interface BreedResult {
   en: string;
 }
 
+const MAX_DIMENSION = 1024; // resize to max 1024px before upload
+const JPEG_QUALITY  = 0.82;
+
 export async function detectBreed(
   file: File,
   petType?: string
 ): Promise<BreedResult> {
-  const base64 = await fileToBase64(file);
-  const mediaType = normalizeMediaType(file.type);
+  const { base64, mediaType } = await compressImage(file);
 
   const res = await fetch(`${API_URL}/detect-breed`, {
-    method: 'POST',
+    method:  'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ image: base64, mediaType, petType }),
+    body:    JSON.stringify({ image: base64, mediaType, petType }),
   });
 
   if (!res.ok) {
@@ -27,22 +29,37 @@ export async function detectBreed(
   return res.json();
 }
 
-function fileToBase64(file: File): Promise<string> {
+/** Resize + compress image via canvas, returns base64 without data: prefix */
+function compressImage(file: File): Promise<{ base64: string; mediaType: 'image/jpeg' }> {
   return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      const result = reader.result as string;
-      // strip the "data:image/...;base64," prefix
-      resolve(result.split(',')[1]);
-    };
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-}
+    const img = new Image();
+    const url = URL.createObjectURL(file);
 
-function normalizeMediaType(type: string): 'image/jpeg' | 'image/png' | 'image/webp' | 'image/gif' {
-  if (type === 'image/png')  return 'image/png';
-  if (type === 'image/webp') return 'image/webp';
-  if (type === 'image/gif')  return 'image/gif';
-  return 'image/jpeg';
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+
+      let { width, height } = img;
+      if (width > MAX_DIMENSION || height > MAX_DIMENSION) {
+        if (width > height) {
+          height = Math.round((height / width) * MAX_DIMENSION);
+          width  = MAX_DIMENSION;
+        } else {
+          width  = Math.round((width / height) * MAX_DIMENSION);
+          height = MAX_DIMENSION;
+        }
+      }
+
+      const canvas  = document.createElement('canvas');
+      canvas.width  = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d')!;
+      ctx.drawImage(img, 0, 0, width, height);
+
+      const dataUrl = canvas.toDataURL('image/jpeg', JPEG_QUALITY);
+      resolve({ base64: dataUrl.split(',')[1], mediaType: 'image/jpeg' });
+    };
+
+    img.onerror = reject;
+    img.src = url;
+  });
 }

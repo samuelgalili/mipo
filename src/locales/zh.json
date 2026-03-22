@@ -1,0 +1,131 @@
+{
+  "common": {
+    "appName": "MIPO",
+    "appTagline": "米宝 — 我的珍贵宝贝 🐾",
+    "continue": "继续",
+    "back": "返回",
+    "saving": "保存中...",
+    "loading": "加载中...",
+    "backToHome": "返回首页"
+  },
+  "pets": {
+    "dog":    { "label": "狗",   "hint": "金毛, 拉布拉多, 混种..." },
+    "cat":    { "label": "猫",   "hint": "波斯猫, 缅因猫, 混种..." },
+    "rabbit": { "label": "兔子", "hint": "侏儒兔, 垂耳兔, 混种..." },
+    "parrot": { "label": "鹦鹉", "hint": "玄凤鹦鹉, 亚马逊, 金刚鹦鹉..." }
+  },
+  "auth": {
+    "login": "登录",
+    "register": "注册",
+    "email": "邮箱",
+    "password": "密码",
+    "passwordPlaceholder": "至少6位字符",
+    "loginBtn": "登录",
+    "registerBtn": "创建账号",
+    "noAccount": "没有账号？",
+    "alreadyRegistered": "已有账号？",
+    "registerLink": "注册",
+    "loginLink": "登录",
+    "checkEmail": "请查收您的邮件",
+    "sentLink": "我们已发送确认链接至 ",
+    "backToLogin": "返回登录",
+    "errors": {
+      "emailRequired": "请输入邮箱",
+      "emailInvalid": "邮箱格式不正确",
+      "passwordRequired": "请输入密码",
+      "passwordMin": "密码至少需要6位字符",
+      "invalidCredentials": "邮箱或密码错误",
+      "alreadyRegistered": "该邮箱已注册 — 请直接登录"
+    }
+  },
+  "onboarding": {
+    "nextBtn": "继续",
+    "startBtn": "开始吧！",
+    "screen1": {
+      "title": "欢迎来到",
+      "titleHighlight": "MIPO",
+      "subtitle": "连接您与宠物的专属平台",
+      "cta": "开始使用 🐾"
+    },
+    "screen2": {
+      "title": "您养了\n什么宠物？",
+      "subtitle": "选择类型 — 之后可以继续添加",
+      "error": "请选择宠物类型"
+    },
+    "screen3": {
+      "title": "您的{{pet}}\n的详情",
+      "nameLabel": "名字",
+      "namePlaceholder": "小黑, 橘橘, 豆豆...",
+      "ageLabel": "年龄",
+      "breedLabel": "品种",
+      "breedPlaceholder": "混种...",
+      "detecting": "正在识别品种...",
+      "confidence": {
+        "high": "识别可信",
+        "medium": "识别较准",
+        "low": "不确定"
+      },
+      "errors": {
+        "nameRequired": "请输入宠物名字",
+        "ageInvalid": "年龄格式不正确"
+      }
+    },
+    "screen4": {
+      "title": "您叫\n什么名字？",
+      "subtitle": "仅用于您的个人资料",
+      "fullName": "全名",
+      "namePlaceholder": "张三",
+      "email": "邮箱",
+      "errors": {
+        "nameRequired": "请输入姓名",
+        "emailRequired": "请输入邮箱",
+        "emailInvalid": "邮箱格式不正确"
+      }
+    },
+    "screen5": {
+      "title": "MIPO 为您\n提供什么",
+      "subtitle": "我们为您精心打造 🐾",
+      "features": [
+        { "icon": "🤝", "title": "宠物伴侣", "desc": "日常陪伴 — 提醒、建议与关爱" },
+        { "icon": "🪞", "title": "平行生活", "desc": "从宠物的视角看世界" },
+        { "icon": "🤖", "title": "AI 对话", "desc": "与了解您宠物的 Mipo AI 畅聊" },
+        { "icon": "🛍️", "title": "商城", "desc": "专为您的宠物定制的商品" }
+      ]
+    },
+    "screen6": {
+      "readyTitle": "{{petName}} 和 {{ownerName}} 准备好了！",
+      "welcome": "欢迎加入 MIPO 大家庭 🐾",
+      "breedLabel": "品种",
+      "ageLabel": "年龄",
+      "years": "岁",
+      "dashboardBtn": "进入主页 🐾"
+    }
+  },
+  "dashboard": {
+    "hello": "你好！👋",
+    "petsSubtitle": "这是您的宠物",
+    "noPets": "暂无宠物",
+    "signOut": "退出",
+    "age": "{{age}} 岁"
+  },
+  "chat": {
+    "typing": "输入中...",
+    "ready": "准备好了",
+    "emptyTitle": "嗨，我是 Mipo！",
+    "emptySubtitle": "您宠物的数字伙伴。欢迎向我提问 — 关于饮食、行为、健康等任何问题。",
+    "placeholder": "向 Mipo 询问关于 {{pet}} 的问题...",
+    "disclaimer": "Mipo 不能替代专业兽医建议",
+    "suggestions": [
+      "怎么判断我的狗狗开心吗？",
+      "每天喂几次？",
+      "宠物不睡觉怎么办？",
+      "什么玩具比较合适？"
+    ]
+  },
+  "callback": {
+    "verifying": "正在验证您的账号...",
+    "success": "账号验证成功！",
+    "redirecting": "正在跳转到应用...",
+    "errorTitle": "验证出错"
+  }
+}
