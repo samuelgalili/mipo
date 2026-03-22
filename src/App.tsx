@@ -10,6 +10,7 @@ import { PricingPage } from './pages/PricingPage'
 import { TermsPage } from './pages/TermsPage'
 import { PrivacyPage } from './pages/PrivacyPage'
 import { RefundPage } from './pages/RefundPage'
+import { AuthCallbackPage } from './pages/AuthCallbackPage'
 import { supabase } from './lib/supabase'
 
 const COMING_SOON = false
@@ -61,12 +62,13 @@ const AppRouter = () => {
 }
 
 function App() {
-  if (isAdminRoute)          return <AdminEvalsDashboard />
-  if (pathname === '/pricing') return <PricingPage />
-  if (pathname === '/terms')   return <TermsPage />
-  if (pathname === '/privacy') return <PrivacyPage />
-  if (pathname === '/refund')  return <RefundPage />
-  if (COMING_SOON && !isLegalRoute) return <ComingSoonPage />
+  if (isAdminRoute)                  return <AdminEvalsDashboard />
+  if (pathname === '/auth/callback') return <AuthCallbackPage />
+  if (pathname === '/pricing')       return <PricingPage />
+  if (pathname === '/terms')         return <TermsPage />
+  if (pathname === '/privacy')       return <PrivacyPage />
+  if (pathname === '/refund')        return <RefundPage />
+  if (COMING_SOON && !isLegalRoute)  return <ComingSoonPage />
   return (
     <AuthProvider>
       <AppRouter />
