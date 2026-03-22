@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import { Card } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
 import { PET_OPTIONS } from '../types/onboarding'
+import { ChatPage } from './ChatPage'
 
 interface Pet {
   id: string
@@ -17,6 +18,7 @@ export const DashboardPage: React.FC = () => {
   const { user, signOut } = useAuth()
   const [pets, setPets] = useState<Pet[]>([])
   const [loading, setLoading] = useState(true)
+  const [chatPet, setChatPet] = useState<Pet | null>(null)
 
   useEffect(() => {
     if (!user) return
@@ -35,6 +37,14 @@ export const DashboardPage: React.FC = () => {
 
   const getPetLabel = (type: string) =>
     PET_OPTIONS.find((p) => p.type === type)?.label ?? type
+
+  if (chatPet) return (
+    <ChatPage
+      petName={chatPet.pet_name}
+      petType={chatPet.pet_type}
+      onBack={() => setChatPet(null)}
+    />
+  )
 
   return (
     <div dir="rtl" className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-fuchsia-50">
@@ -77,7 +87,7 @@ export const DashboardPage: React.FC = () => {
                   <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-100 to-fuchsia-100 flex items-center justify-center text-3xl shrink-0">
                     {getPetEmoji(pet.pet_type)}
                   </div>
-                  <div className="min-w-0">
+                  <div className="min-w-0 flex-1">
                     <h3 className="font-bold text-gray-800 text-lg leading-tight">{pet.pet_name}</h3>
                     <p className="text-sm text-gray-400">
                       {getPetLabel(pet.pet_type)}
@@ -85,6 +95,13 @@ export const DashboardPage: React.FC = () => {
                       {pet.pet_age != null ? ` · גיל ${pet.pet_age}` : ''}
                     </p>
                   </div>
+                  <button
+                    onClick={() => setChatPet(pet)}
+                    className="flex-shrink-0 w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-fuchsia-500 flex items-center justify-center text-white shadow-md shadow-purple-200 hover:opacity-90 active:scale-95 transition-all"
+                    title={`שוחח עם Mipo על ${pet.pet_name}`}
+                  >
+                    🐾
+                  </button>
                 </div>
               </Card>
             ))}

@@ -12,7 +12,7 @@ import { PrivacyPage } from './pages/PrivacyPage'
 import { RefundPage } from './pages/RefundPage'
 import { supabase } from './lib/supabase'
 
-const COMING_SOON = true
+const COMING_SOON = false
 const pathname = typeof window !== 'undefined' ? window.location.pathname : '/'
 // דפים שנגישים תמיד — גם במצב coming soon
 const isAdminRoute  = pathname === '/admin'

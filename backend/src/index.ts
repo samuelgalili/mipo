@@ -4,6 +4,7 @@ import express from 'express';
 import cors from 'cors';
 
 import healthRouter from './routes/health';
+import chatRouter   from './routes/chat';
 
 const app  = express();
 const PORT = Number(process.env.PORT ?? 3001);
@@ -14,6 +15,7 @@ app.use(express.json());
 
 // ─── Routes ──────────────────────────────────────────────────
 app.use('/health', healthRouter);
+app.use('/chat',   chatRouter);
 
 // 404
 app.use((_req, res) => {
