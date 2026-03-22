@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# end-of-day.sh — MIPO Daily Journal + Dashboard update
+# weekly-summary.sh — MIPO Weekly Summary + Dashboard update
 
 set -e
 SCRIPTS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -7,13 +7,11 @@ cd "$SCRIPTS_DIR"
 
 echo ""
 echo "═══════════════════════════════════════════"
-echo "  📓 MIPO End of Day"
+echo "  📊 MIPO Weekly Summary"
 echo "═══════════════════════════════════════════"
 
-node end-of-day.js
+node weekly-summary.js
 
 echo ""
 echo "📊 מעדכן dashboard..."
 node generate-dashboard.js
-
-echo "✅ סיום סשן מלא"

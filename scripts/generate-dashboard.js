@@ -1,0 +1,321 @@
+#!/usr/bin/env node
+// generate-dashboard.js — MIPO Velocity Dashboard Generator
+// מייצר dashboard.html עם נתונים מוטמעים מהיומן
+
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
+import { join, dirname } from "path";
+import { fileURLToPath } from "url";
+import {
+  loadEnv, JOURNAL_DIR, REPO_ROOT,
+  extractSection, getDailyFiles,
+} from "./lib/utils.js";
+
+loadEnv();
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+
+// ─── Parse daily files ────────────────────────────────────────────────────────
+
+function parseDailyFiles() {
+  const files = getDailyFiles();
+  const entries = [];
+
+  for (const file of files.slice(-30)) { // last 30 days
+    const date    = file.replace(".md", "");
+    const content = readFileSync(join(JOURNAL_DIR, file), "utf8");
+
+    const gitSection = extractSection(content, "📝 Git Log — קומיטים של היום");
+    const commits = gitSection
+      ? gitSection.split("\n").filter(l => l.startsWith("- `")).length
+      : 0;
+
+    const workSection = extractSection(content, "⏱️ זמן עבודה");
+    let hours = 0;
+    if (workSection) {
+      const durationMatch = workSection.match(/(\d+)ש'/);
+      const minuteMatch   = workSection.match(/(\d+)ד'/);
+      hours = (durationMatch ? parseInt(durationMatch[1]) : 0)
+            + (minuteMatch   ? parseInt(minuteMatch[1]) / 60 : 0);
+    }
+
+    const costSection = extractSection(content, "💰 עלות Anthropic API");
+    const costMatch   = costSection?.match(/\$(\d+\.\d+)/);
+    const cost = costMatch ? parseFloat(costMatch[1]) : 0;
+
+    const nextStep  = extractSection(content, "➡️ השלב הבא")  ?? "";
+    const lessons   = extractSection(content, "💡 Lessons Learned") ?? "";
+    const decisions = extractSection(content, "🧠 Decision Log")    ?? "";
+
+    entries.push({ date, commits, hours: parseFloat(hours.toFixed(2)), cost, nextStep, lessons, decisions });
+  }
+
+  return entries;
+}
+
+// ─── Stats ────────────────────────────────────────────────────────────────────
+
+function calcStats(entries) {
+  if (!entries.length) return {};
+  const totalCommits = entries.reduce((s, e) => s + e.commits, 0);
+  const totalHours   = entries.reduce((s, e) => s + e.hours,   0);
+  const totalCost    = entries.reduce((s, e) => s + e.cost,    0);
+  const avgCommits   = (totalCommits / entries.length).toFixed(1);
+  const bestDay      = entries.reduce((a, b) => a.commits > b.commits ? a : b);
+  const activeDays   = entries.filter(e => e.commits > 0).length;
+  return { totalCommits, totalHours: totalHours.toFixed(1), totalCost: totalCost.toFixed(4), avgCommits, bestDay, activeDays, totalDays: entries.length };
+}
+
+// ─── HTML ─────────────────────────────────────────────────────────────────────
+
+function buildDashboard(entries, stats) {
+  const labels    = JSON.stringify(entries.map(e => e.date));
+  const commits   = JSON.stringify(entries.map(e => e.commits));
+  const hours     = JSON.stringify(entries.map(e => e.hours));
+  const costs     = JSON.stringify(entries.map(e => e.cost));
+  const generated = new Date().toLocaleString("he-IL");
+
+  const recentEntries = entries.slice(-7).reverse().map(e => `
+    <tr>
+      <td>${e.date}</td>
+      <td><span class="badge">${e.commits}</span></td>
+      <td>${e.hours > 0 ? e.hours + "ש'" : "—"}</td>
+      <td>${e.cost > 0 ? "$" + e.cost.toFixed(4) : "—"}</td>
+      <td class="truncate">${e.nextStep || "—"}</td>
+    </tr>`).join("");
+
+  return `<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MIPO Work Journal — Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --sky:     #0099e6;
+      --sky-l:   #e0f4ff;
+      --gold:    #ffb800;
+      --coral:   #e8725a;
+      --green:   #2ecc71;
+      --bg:      #f7f9fc;
+      --card:    #ffffff;
+      --text:    #1a2233;
+      --muted:   #64748b;
+      --border:  #e2e8f0;
+      --radius:  14px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 24px;
+    }
+    header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 28px;
+    }
+    header h1 { font-size: 1.6rem; font-weight: 700; }
+    header p  { color: var(--muted); font-size: 0.9rem; margin-top: 2px; }
+    .paw { font-size: 2rem; }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+    .stat-card {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 20px;
+      border: 1px solid var(--border);
+      box-shadow: 0 2px 8px rgba(0,120,200,.07);
+      text-align: center;
+    }
+    .stat-card .value {
+      font-size: 2rem;
+      font-weight: 800;
+      color: var(--sky);
+      line-height: 1;
+      margin-bottom: 4px;
+    }
+    .stat-card .label { color: var(--muted); font-size: 0.82rem; }
+
+    .charts-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-bottom: 28px;
+    }
+    @media (max-width: 700px) { .charts-grid { grid-template-columns: 1fr; } }
+    .chart-card {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 20px;
+      border: 1px solid var(--border);
+      box-shadow: 0 2px 8px rgba(0,120,200,.07);
+    }
+    .chart-card h2 { font-size: 1rem; margin-bottom: 14px; font-weight: 600; }
+
+    .table-card {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 20px;
+      border: 1px solid var(--border);
+      box-shadow: 0 2px 8px rgba(0,120,200,.07);
+      overflow-x: auto;
+    }
+    .table-card h2 { font-size: 1rem; margin-bottom: 14px; font-weight: 600; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+    th, td { padding: 10px 12px; text-align: right; border-bottom: 1px solid var(--border); }
+    th { color: var(--muted); font-weight: 600; font-size: 0.82rem; text-transform: uppercase; }
+    tr:last-child td { border-bottom: none; }
+    .badge {
+      display: inline-block;
+      background: var(--sky-l);
+      color: var(--sky);
+      font-weight: 700;
+      border-radius: 8px;
+      padding: 2px 10px;
+      font-size: 0.88rem;
+    }
+    .truncate { max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    footer { text-align: center; color: var(--muted); font-size: 0.8rem; margin-top: 24px; }
+  </style>
+</head>
+<body>
+
+<header>
+  <span class="paw">🐾</span>
+  <div>
+    <h1>MIPO Work Journal</h1>
+    <p>Velocity Dashboard · ${generated}</p>
+  </div>
+</header>
+
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="value">${stats.totalCommits ?? 0}</div>
+    <div class="label">סה"כ קומיטים</div>
+  </div>
+  <div class="stat-card">
+    <div class="value">${stats.avgCommits ?? 0}</div>
+    <div class="label">ממוצע קומיטים/יום</div>
+  </div>
+  <div class="stat-card">
+    <div class="value">${stats.activeDays ?? 0}</div>
+    <div class="label">ימי עבודה פעילים</div>
+  </div>
+  <div class="stat-card">
+    <div class="value">${stats.totalHours ?? 0}ש'</div>
+    <div class="label">סה"כ שעות עבודה</div>
+  </div>
+  <div class="stat-card">
+    <div class="value" style="font-size:1.4rem">${stats.bestDay?.date?.slice(5) ?? "—"}</div>
+    <div class="label">יום שיא (${stats.bestDay?.commits ?? 0} קומיטים)</div>
+  </div>
+  <div class="stat-card">
+    <div class="value" style="color:var(--gold);font-size:1.4rem">$${stats.totalCost ?? "0.0000"}</div>
+    <div class="label">עלות API כוללת</div>
+  </div>
+</div>
+
+<div class="charts-grid">
+  <div class="chart-card">
+    <h2>📝 קומיטים לפי יום</h2>
+    <canvas id="commitsChart"></canvas>
+  </div>
+  <div class="chart-card">
+    <h2>⏱️ שעות עבודה לפי יום</h2>
+    <canvas id="hoursChart"></canvas>
+  </div>
+</div>
+
+<div class="table-card">
+  <h2>📋 7 ימים אחרונים</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>תאריך</th>
+        <th>קומיטים</th>
+        <th>שעות</th>
+        <th>עלות API</th>
+        <th>השלב הבא</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${recentEntries}
+    </tbody>
+  </table>
+</div>
+
+<footer>נוצר על ידי generate-dashboard.js · MIPO Work Journal 🐾</footer>
+
+<script>
+const labels  = ${labels};
+const commits = ${commits};
+const hours   = ${hours};
+
+const sharedOpts = {
+  responsive: true,
+  plugins: { legend: { display: false } },
+  scales: {
+    x: { ticks: { maxRotation: 45, font: { size: 10 } } },
+    y: { beginAtZero: true, ticks: { stepSize: 1 } }
+  }
+};
+
+new Chart(document.getElementById("commitsChart"), {
+  type: "bar",
+  data: {
+    labels,
+    datasets: [{
+      data: commits,
+      backgroundColor: "rgba(0,153,230,0.7)",
+      borderColor: "#0099e6",
+      borderWidth: 1,
+      borderRadius: 6,
+    }]
+  },
+  options: sharedOpts,
+});
+
+new Chart(document.getElementById("hoursChart"), {
+  type: "line",
+  data: {
+    labels,
+    datasets: [{
+      data: hours,
+      borderColor: "#ffb800",
+      backgroundColor: "rgba(255,184,0,0.12)",
+      tension: 0.35,
+      fill: true,
+      pointRadius: 4,
+    }]
+  },
+  options: { ...sharedOpts, scales: { ...sharedOpts.scales, y: { beginAtZero: true } } },
+});
+</script>
+</body>
+</html>`;
+}
+
+// ─── Main ─────────────────────────────────────────────────────────────────────
+
+function main() {
+  const entries = parseDailyFiles();
+  const stats   = calcStats(entries);
+  const html    = buildDashboard(entries, stats);
+
+  const outPath = join(REPO_ROOT, "dashboard.html");
+  writeFileSync(outPath, html, "utf8");
+
+  console.log(`\n✅ Dashboard נוצר: ${outPath}`);
+  console.log("   פתח בדפדפן: open dashboard.html\n");
+}
+
+main();

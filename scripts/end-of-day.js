@@ -1,188 +1,174 @@
 #!/usr/bin/env node
-// end-of-day.js — MIPO Work Journal Generator
-// מייצר סיכום יומי ושבועי אוטומטי מ-git log
+// end-of-day.js — MIPO Daily Work Journal Generator
 
-import { execSync } from "child_process";
-import { existsSync, readFileSync, writeFileSync, readdirSync } from "fs";
-import { join, dirname } from "path";
-import { fileURLToPath } from "url";
+import { existsSync, mkdirSync, writeFileSync, readFileSync } from "fs";
+import { join } from "path";
 import readline from "readline";
+import {
+  loadEnv, JOURNAL_DIR,
+  todayStr, isoWeekStr,
+  getGitLog, getWorkTime, getBranchName,
+  getTasks, getAnthropicCost, sendNotification,
+} from "./lib/utils.js";
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const REPO_ROOT = join(__dirname, "..");
-const JOURNAL_DIR = join(process.env.HOME, "Documents", "mipo-journal");
+loadEnv();
 
-// ─── תאריכים ────────────────────────────────────────────────────────────────
-
-function todayStr() {
-  return new Date().toISOString().slice(0, 10); // YYYY-MM-DD
-}
-
-function weekStr() {
-  const now = new Date();
-  const year = now.getFullYear();
-  const startOfYear = new Date(year, 0, 1);
-  const week = Math.ceil(
-    ((now - startOfYear) / 86400000 + startOfYear.getDay() + 1) / 7
-  );
-  return `week-${year}-${String(week).padStart(2, "0")}`;
-}
-
-// ─── git log של היום ─────────────────────────────────────────────────────────
-
-function getGitLog() {
-  try {
-    const since = `${todayStr()} 00:00:00`;
-    const raw = execSync(
-      `git -C "${REPO_ROOT}" log --since="${since}" --oneline --no-merges 2>/dev/null`,
-      { encoding: "utf8" }
-    ).trim();
-
-    if (!raw) return "_אין קומיטים היום_";
-
-    return raw
-      .split("\n")
-      .map((line) => `- \`${line}\``)
-      .join("\n");
-  } catch {
-    return "_לא ניתן לקרוא git log_";
-  }
-}
-
-function getGitDiff() {
-  try {
-    const files = execSync(
-      `git -C "${REPO_ROOT}" diff --name-only HEAD~1 HEAD 2>/dev/null`,
-      { encoding: "utf8" }
-    ).trim();
-    if (!files) return "_אין שינויים_";
-    return files
-      .split("\n")
-      .map((f) => `- \`${f}\``)
-      .join("\n");
-  } catch {
-    return "_לא ניתן לקרוא diff_";
-  }
-}
-
-// ─── tasks/ ──────────────────────────────────────────────────────────────────
-
-function getTasks() {
-  const tasksDir = join(REPO_ROOT, "tasks");
-  if (!existsSync(tasksDir)) return { done: [], open: [] };
-
-  const files = readdirSync(tasksDir).filter((f) => f.endsWith(".md"));
-  const done = [];
-  const open = [];
-
-  for (const file of files) {
-    const content = readFileSync(join(tasksDir, file), "utf8");
-    const title = content.split("\n")[0].replace(/^#+\s*/, "").trim();
-    if (/status:\s*(done|completed|הושלם)/i.test(content)) {
-      done.push(`- ${title}`);
-    } else {
-      open.push(`- ${title}`);
-    }
-  }
-
-  return { done, open };
-}
-
-// ─── קלט אינטראקטיבי ─────────────────────────────────────────────────────────
+// ─── Interactive prompts ──────────────────────────────────────────────────────
 
 function ask(rl, question) {
-  return new Promise((resolve) => rl.question(question, resolve));
+  return new Promise(resolve => rl.question(question, resolve));
 }
 
 async function collectInput() {
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
 
-  console.log("\n📓 MIPO Work Journal — סיכום יומי\n");
+  console.log("\n" + "═".repeat(55));
+  console.log("  📓 MIPO Work Journal — סיכום יומי");
+  console.log("═".repeat(55) + "\n");
 
-  const nextStep    = await ask(rl, "➡️  השלב הבא (מה ממשיכים מחר?): ");
-  const openIssues  = await ask(rl, "🔴 בעיות פתוחות (אפשר להשאיר ריק): ");
-  const lessons     = await ask(rl, "💡 Lessons Learned (תובנות מהיום): ");
+  const nextStep   = await ask(rl, "➡️  השלב הבא (מה ממשיכים מחר?):\n   > ");
+  const openIssues = await ask(rl, "\n🔴 בעיות פתוחות (Enter לדילוג):\n   > ");
+  const decisions  = await ask(rl, "\n🧠 Decision Log (החלטות שהתקבלו, Enter לדילוג):\n   > ");
+  const lessons    = await ask(rl, "\n💡 Lessons Learned (תובנות, Enter לדילוג):\n   > ");
 
   rl.close();
-  return { nextStep, openIssues, lessons };
+  return { nextStep, openIssues, decisions, lessons };
 }
 
-// ─── בניית הקובץ היומי ───────────────────────────────────────────────────────
+// ─── Markdown builder ─────────────────────────────────────────────────────────
 
-function buildDaily({ nextStep, openIssues, lessons }) {
+function buildDailyMd(input, { commits, workTime, tasks, cost, branch }) {
   const today = todayStr();
-  const gitLog = getGitLog();
-  const gitDiff = getGitDiff();
-  const { done, open } = getTasks();
 
-  const doneSection  = done.length  ? done.join("\n")  : "_אין tasks שהושלמו_";
-  const openSection  = open.length  ? open.join("\n")  : "_אין tasks פתוחים_";
-  const issuesBlock  = openIssues.trim() || "_ללא בעיות פתוחות_";
-  const lessonsBlock = lessons.trim()    || "_ללא תובנות מיוחדות_";
+  const fmtCommits = commits.length
+    ? commits.map(c => `- \`${c.hash}\` ${c.subject}`).join("\n")
+    : "_אין קומיטים היום_";
+
+  const fmtDone = tasks.done.length
+    ? tasks.done.map(t => `- [x] ${t}`).join("\n")
+    : "_ללא tasks שהושלמו_";
+
+  const fmtTodo = tasks.todo.length
+    ? tasks.todo.map(t => `- [ ] ${t}`).join("\n")
+    : "_ללא tasks פתוחים_";
+
+  const fmtWork = workTime
+    ? `${workTime.first} → ${workTime.last}  •  ${workTime.duration}  •  ${workTime.commits} קומיטים`
+    : "_אין נתוני זמן (אין קומיטים)_";
+
+  const fmtCost = cost ?? "_לא זמין — הוסף \`ANTHROPIC_API_KEY\` ל-.env.local_";
 
   return `# יומן עבודה — ${today}
 
-## Git Log — קומיטים של היום
-${gitLog}
+> Branch: \`${branch}\` | שבוע: \`${isoWeekStr()}\`
 
-## קבצים שהשתנו
-${gitDiff}
+## ⏱️ זמן עבודה
+${fmtWork}
 
-## Tasks שהושלמו
-${doneSection}
+## 💰 עלות Anthropic API
+${fmtCost}
 
-## Tasks פתוחים
-${openSection}
+## 📝 Git Log — קומיטים של היום
+${fmtCommits}
 
-## בעיות פתוחות
-${issuesBlock}
+## ✅ Tasks שהושלמו
+${fmtDone}
 
-## השלב הבא
-${nextStep.trim() || "_לא צוין_"}
+## 📋 Tasks פתוחים
+${fmtTodo}
 
-## Lessons Learned
-${lessonsBlock}
+## 🔴 בעיות פתוחות
+${input.openIssues.trim() || "_ללא_"}
+
+## ➡️ השלב הבא
+${input.nextStep.trim() || "_לא צוין_"}
+
+## 🧠 Decision Log
+${input.decisions.trim() || "_ללא החלטות מיוחדות היום_"}
+
+## 💡 Lessons Learned
+${input.lessons.trim() || "_ללא_"}
 
 ---
 _נוצר אוטומטית על ידי end-of-day.js · ${new Date().toLocaleString("he-IL")}_
 `;
 }
 
-// ─── עדכון הקובץ השבועי ──────────────────────────────────────────────────────
+// ─── Weekly file update ───────────────────────────────────────────────────────
 
-function updateWeekly(today, nextStep) {
-  const weekFile = join(JOURNAL_DIR, `${weekStr()}.md`);
-  const entry = `\n## ${today}\n${nextStep.trim() || "_ראה קובץ יומי_"}\n`;
+function appendToWeekly(today, input, commits) {
+  const weekFile = join(JOURNAL_DIR, `${isoWeekStr()}.md`);
+  const entry = [
+    `\n## ${today}`,
+    `- **קומיטים:** ${commits.length}`,
+    `- **השלב הבא:** ${input.nextStep.trim() || "_ראה קובץ יומי_"}`,
+    input.decisions.trim() ? `- **החלטות:** ${input.decisions.trim()}` : "",
+    "",
+  ].filter(l => l !== undefined).join("\n");
 
   if (existsSync(weekFile)) {
     const current = readFileSync(weekFile, "utf8");
-    // לא מוסיפים אם כבר קיים רשומה לתאריך זה
-    if (current.includes(`## ${today}`)) return;
-    writeFileSync(weekFile, current + entry, "utf8");
+    if (!current.includes(`## ${today}`)) {
+      writeFileSync(weekFile, current + entry, "utf8");
+    }
   } else {
-    const header = `# ${weekStr()} — סיכום שבועי\n${entry}`;
-    writeFileSync(weekFile, header, "utf8");
+    writeFileSync(weekFile, `# ${isoWeekStr()} — סיכום שבועי\n${entry}`, "utf8");
   }
 }
 
-// ─── ראשי ────────────────────────────────────────────────────────────────────
+// ─── WhatsApp message ─────────────────────────────────────────────────────────
+
+function buildWhatsAppMsg(today, commits, workTime, input) {
+  const lines = [
+    `📓 *MIPO — סיכום יומי ${today}*`,
+    "",
+    `⏱️ זמן עבודה: ${workTime?.duration ?? "לא זמין"}`,
+    `📝 קומיטים: ${commits.length}`,
+  ];
+
+  if (commits.length) {
+    lines.push(...commits.slice(0, 3).map(c => `  • ${c.subject}`));
+    if (commits.length > 3) lines.push(`  • ...ועוד ${commits.length - 3}`);
+  }
+
+  lines.push("");
+  if (input.openIssues.trim()) lines.push(`🔴 בעיות: ${input.openIssues.trim()}`);
+  lines.push(`➡️ מחר: ${input.nextStep.trim() || "לא צוין"}`);
+  lines.push("", "🐾 _MIPO Work Journal_");
+
+  return lines.join("\n");
+}
+
+// ─── Main ─────────────────────────────────────────────────────────────────────
 
 async function main() {
-  const input = await collectInput();
-  const today = todayStr();
+  if (!existsSync(JOURNAL_DIR)) mkdirSync(JOURNAL_DIR, { recursive: true });
 
-  const dailyContent = buildDaily(input);
+  const input    = await collectInput();
+  const today    = todayStr();
+  const commits  = getGitLog();
+  const workTime = getWorkTime();
+  const tasks    = getTasks();
+  const cost     = await getAnthropicCost();
+  const branch   = getBranchName();
+
+  // Write daily file
+  const dailyContent = buildDailyMd(input, { commits, workTime, tasks, cost, branch });
   const dailyFile = join(JOURNAL_DIR, `${today}.md`);
   writeFileSync(dailyFile, dailyContent, "utf8");
 
-  updateWeekly(today, input.nextStep);
+  // Update weekly file
+  appendToWeekly(today, input, commits);
 
-  console.log(`\n✅ נשמר: ${dailyFile}`);
-  console.log(`✅ עודכן: ${join(JOURNAL_DIR, weekStr() + ".md")}`);
+  console.log(`\n✅ יומי: ${dailyFile}`);
+  console.log(`✅ שבועי: ${join(JOURNAL_DIR, isoWeekStr() + ".md")}`);
+
+  // WhatsApp via OpenClaw
+  const msg  = buildWhatsAppMsg(today, commits, workTime, input);
+  const sent = await sendNotification(msg);
+  if (sent) console.log("📲 הודעת WhatsApp נשלחה");
+
   console.log("\nלילה טוב 🐾\n");
 }
 
-main().catch((err) => {
-  console.error("שגיאה:", err.message);
-  process.exit(1);
-});
+main().catch(e => { console.error("שגיאה:", e.message); process.exit(1); });

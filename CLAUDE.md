@@ -34,14 +34,41 @@ When adding or modifying components, maintain these tokens for visual consistenc
 
 ## Work Journal
 
-**בסוף כל סשן — הרץ את הסקריפט:**
+**בתחילת כל סשן — הרץ context-snapshot.sh:**
+```bash
+bash scripts/context-snapshot.sh
+```
+מציג: יומן אתמול (השלב הבא + בעיות) + tasks פתוחים + קומיטים אחרונים.
 
+**בסוף כל סשן — הרץ end-of-day.sh:**
 ```bash
 bash scripts/end-of-day.sh
 ```
+מייצר סיכום יומי + מעדכן שבועי + שולח WhatsApp + מרענן dashboard.
 
-הסקריפט מייצר אוטומטית:
-- קובץ יומי: `~/Documents/mipo-journal/YYYY-MM-DD.md`
-- קובץ שבועי: `~/Documents/mipo-journal/week-YYYY-WW.md`
+**סיכום שבועי (סוף שבוע):**
+```bash
+bash scripts/weekly-summary.sh
+```
 
-כל סיכום כולל: git log של היום, tasks שהושלמו, בעיות פתוחות, השלב הבא, ו-lessons learned.
+**Dashboard velocity:**
+```bash
+node scripts/generate-dashboard.js && open dashboard.html
+```
+
+### מה נשמר אוטומטית בכל סיכום יומי
+- git log של היום + זמן עבודה (first→last commit)
+- tasks שהושלמו מ-`tasks/done.md`
+- tasks פתוחים מ-`tasks/todo.md`
+- בעיות פתוחות · השלב הבא · Decision Log · Lessons Learned
+- עלות Anthropic API (דורש `ANTHROPIC_API_KEY` ב-.env.local)
+
+### קבצי tasks
+| קובץ | תפקיד |
+|------|--------|
+| `tasks/todo.md` | tasks פתוחים — `- [ ] תיאור` |
+| `tasks/done.md` | tasks שהושלמו — `- [x] תיאור` |
+
+### תיקיית journal
+`~/Documents/mipo-journal/YYYY-MM-DD.md` — יומי
+`~/Documents/mipo-journal/week-YYYY-WW.md` — שבועי
