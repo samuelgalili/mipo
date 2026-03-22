@@ -6,11 +6,18 @@ import { OnboardingPage } from './pages/OnboardingPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { ComingSoonPage } from './pages/ComingSoonPage'
 import AdminEvalsDashboard from './pages/AdminEvalsDashboard'
+import { PricingPage } from './pages/PricingPage'
+import { TermsPage } from './pages/TermsPage'
+import { PrivacyPage } from './pages/PrivacyPage'
+import { RefundPage } from './pages/RefundPage'
 import { supabase } from './lib/supabase'
 
 const COMING_SOON = true
-// כדי לגשת לדשבורד admin: פתח /admin בכתובת ה-URL
-const isAdminRoute = typeof window !== 'undefined' && window.location.pathname === '/admin'
+const pathname = typeof window !== 'undefined' ? window.location.pathname : '/'
+// דפים שנגישים תמיד — גם במצב coming soon
+const isAdminRoute  = pathname === '/admin'
+const isLegalRoute  = pathname === '/pricing' || pathname === '/terms'
+                   || pathname === '/privacy'  || pathname === '/refund'
 
 type AppScreen = 'loading' | 'auth' | 'onboarding' | 'dashboard'
 
@@ -54,8 +61,12 @@ const AppRouter = () => {
 }
 
 function App() {
-  if (isAdminRoute) return <AdminEvalsDashboard />
-  if (COMING_SOON) return <ComingSoonPage />
+  if (isAdminRoute)          return <AdminEvalsDashboard />
+  if (pathname === '/pricing') return <PricingPage />
+  if (pathname === '/terms')   return <TermsPage />
+  if (pathname === '/privacy') return <PrivacyPage />
+  if (pathname === '/refund')  return <RefundPage />
+  if (COMING_SOON && !isLegalRoute) return <ComingSoonPage />
   return (
     <AuthProvider>
       <AppRouter />
