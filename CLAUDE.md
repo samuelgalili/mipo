@@ -31,3 +31,17 @@ When adding or modifying components, maintain these tokens for visual consistenc
 - Props follow established patterns: `variant`, `size`, `label`, `onClick`, `className`, `disabled`, `loading`
 - Export all components from `components/index.js`
 - Pet-themed emoji usage (🐾) is intentional and part of the brand
+
+## Work Journal
+
+**בסוף כל סשן — הרץ את הסקריפט:**
+
+```bash
+bash scripts/end-of-day.sh
+```
+
+הסקריפט מייצר אוטומטית:
+- קובץ יומי: `~/Documents/mipo-journal/YYYY-MM-DD.md`
+- קובץ שבועי: `~/Documents/mipo-journal/week-YYYY-WW.md`
+
+כל סיכום כולל: git log של היום, tasks שהושלמו, בעיות פתוחות, השלב הבא, ו-lessons learned.
