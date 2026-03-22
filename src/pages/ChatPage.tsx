@@ -1,102 +1,156 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react'
 import { streamMessage, type ChatMessage } from '../services/chat'
 
-// ─── Walking pet animation ─────────────────────────────────────────────────
-const WalkingPet: React.FC<{ typing: boolean }> = ({ typing }) => (
-  <div
-    className={`flex items-end justify-center transition-all duration-500 ${
-      typing ? 'opacity-100' : 'opacity-0 translate-y-1'
-    }`}
-    style={{ height: 44 }}
-    aria-hidden="true"
-  >
-    <svg
-      viewBox="0 0 80 44"
-      width="80"
-      height="44"
-      className={typing ? 'animate-[walk_0.5s_ease-in-out_infinite_alternate]' : ''}
+// ─── Types ─────────────────────────────────────────────────────────────────
+interface Conversation {
+  id: string
+  title: string
+  messages: ChatMessage[]
+  updatedAt: Date
+}
+
+function newConversation(): Conversation {
+  return { id: crypto.randomUUID(), title: 'שיחה חדשה', messages: [], updatedAt: new Date() }
+}
+
+// ─── Icons ─────────────────────────────────────────────────────────────────
+const IconEdit  = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-4 h-4"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+const IconChat  = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-4 h-4"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+const IconSend  = () => <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4"><path d="M22 2L11 13M22 2L15 22l-4-9-9-4 20-7z"/></svg>
+const IconMenu  = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+const IconTrash = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-3.5 h-3.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
+
+// ─── Sidebar ────────────────────────────────────────────────────────────────
+interface SidebarProps {
+  open: boolean
+  onClose: () => void
+  conversations: Conversation[]
+  activeId: string
+  onSelect: (id: string) => void
+  onNew: () => void
+  onDelete: (id: string) => void
+  petName?: string
+}
+
+const Sidebar: React.FC<SidebarProps> = ({
+  open, onClose, conversations, activeId, onSelect, onNew, onDelete, petName
+}) => (
+  <>
+    {/* Mobile overlay */}
+    {open && (
+      <div className="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm lg:hidden" onClick={onClose} />
+    )}
+
+    <aside
+      className={`
+        fixed top-0 bottom-0 left-0 z-50 w-[260px] flex flex-col
+        bg-[var(--sidebar-bg)] border-r border-[var(--border)]
+        transition-transform duration-250 ease-out
+        lg:relative lg:translate-x-0 lg:z-auto lg:flex-shrink-0
+        ${open ? 'translate-x-0' : '-translate-x-full'}
+      `}
     >
-      <style>{`
-        @keyframes walk {
-          from { transform: translateX(-4px) rotate(-2deg); }
-          to   { transform: translateX(4px)  rotate(2deg); }
-        }
-        @keyframes tail {
-          from { transform-origin: 62px 22px; transform: rotate(-15deg); }
-          to   { transform-origin: 62px 22px; transform: rotate(15deg); }
-        }
-        .tail { animation: tail 0.4s ease-in-out infinite alternate; }
-      `}</style>
-      <defs>
-        <linearGradient id="dog-g" x1="0" y1="0" x2="80" y2="44" gradientUnits="userSpaceOnUse">
-          <stop offset="0%"   stopColor="hsl(204 100% 48%)" />
-          <stop offset="60%"  stopColor="hsl(210 85% 45%)" />
-          <stop offset="100%" stopColor="hsl(200 95% 55%)" />
-        </linearGradient>
-      </defs>
-      <ellipse cx="38" cy="26" rx="20" ry="12" fill="url(#dog-g)" opacity="0.9"/>
-      <circle cx="20" cy="20" r="10" fill="url(#dog-g)" opacity="0.95"/>
-      <ellipse cx="14" cy="13" rx="5" ry="7" fill="hsl(210 85% 45%)" opacity="0.8" transform="rotate(-15 14 13)"/>
-      <circle cx="17" cy="19" r="1.8" fill="white"/>
-      <circle cx="17.5" cy="19.3" r="0.9" fill="#1a2a3a"/>
-      <ellipse cx="11" cy="23" rx="2.5" ry="1.5" fill="#1a2a3a" opacity="0.7"/>
-      <rect x="24" y="35" width="5" height="8" rx="2.5" fill="url(#dog-g)" opacity="0.85"
-        style={{ transformOrigin:'26px 35px', animation: typing ? 'walk 0.5s 0.1s ease-in-out infinite alternate' : 'none' }}/>
-      <rect x="33" y="35" width="5" height="8" rx="2.5" fill="url(#dog-g)" opacity="0.85"
-        style={{ transformOrigin:'35px 35px', animation: typing ? 'walk 0.5s 0.25s ease-in-out infinite alternate' : 'none' }}/>
-      <rect x="43" y="35" width="5" height="8" rx="2.5" fill="url(#dog-g)" opacity="0.85"
-        style={{ transformOrigin:'45px 35px', animation: typing ? 'walk 0.5s ease-in-out infinite alternate' : 'none' }}/>
-      <rect x="52" y="35" width="5" height="8" rx="2.5" fill="url(#dog-g)" opacity="0.85"
-        style={{ transformOrigin:'54px 35px', animation: typing ? 'walk 0.5s 0.15s ease-in-out infinite alternate' : 'none' }}/>
-      <path className="tail" d="M58 22 Q70 10 72 18" stroke="url(#dog-g)" strokeWidth="3.5" fill="none" strokeLinecap="round"/>
-    </svg>
-  </div>
+      {/* Header */}
+      <div className="flex items-center justify-between px-4 h-14 border-b border-[var(--border)] flex-shrink-0">
+        <span className="text-sm font-semibold text-[var(--text-primary)]">🐾 Mipo</span>
+        <button
+          onClick={onNew}
+          className="flex items-center gap-1.5 text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-bg)] px-2 py-1.5 rounded-lg transition-colors"
+        >
+          <IconEdit /> חדש
+        </button>
+      </div>
+
+      {/* Conversations */}
+      <div className="flex-1 overflow-y-auto py-2 px-2">
+        {petName && (
+          <div className="px-3 py-1.5 mb-1">
+            <span className="text-[11px] font-medium text-[var(--text-tertiary)] uppercase tracking-wider">
+              שיחות על {petName}
+            </span>
+          </div>
+        )}
+        {conversations.length === 0 ? (
+          <p className="text-center text-xs text-[var(--text-tertiary)] py-8">אין שיחות עדיין</p>
+        ) : (
+          conversations.map(conv => (
+            <div
+              key={conv.id}
+              className={`group flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer transition-colors ${
+                activeId === conv.id
+                  ? 'bg-[var(--active-bg)] text-[var(--text-primary)]'
+                  : 'hover:bg-[var(--hover-bg)] text-[var(--text-secondary)]'
+              }`}
+              onClick={() => { onSelect(conv.id); onClose() }}
+            >
+              <IconChat />
+              <span className="flex-1 text-sm truncate">{conv.title}</span>
+              <button
+                onClick={(e) => { e.stopPropagation(); onDelete(conv.id) }}
+                className="opacity-0 group-hover:opacity-100 text-[var(--text-tertiary)] hover:text-red-500 transition-all p-0.5 rounded"
+              >
+                <IconTrash />
+              </button>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Footer */}
+      <div className="px-4 py-3 border-t border-[var(--border)] flex-shrink-0">
+        <p className="text-[11px] text-[var(--text-tertiary)]">Mipo לא מחליף ייעוץ וטרינרי</p>
+      </div>
+    </aside>
+  </>
 )
 
-// ─── Bubble ────────────────────────────────────────────────────────────────
-const Bubble: React.FC<{ msg: ChatMessage; isNew?: boolean }> = ({ msg, isNew }) => {
+// ─── Message bubble ─────────────────────────────────────────────────────────
+const Message: React.FC<{ msg: ChatMessage; isLatest?: boolean }> = ({ msg, isLatest }) => {
   const isUser = msg.role === 'user'
   return (
-    <div className={`flex w-full ${isUser ? 'justify-end' : 'justify-start'} ${isNew ? 'animate-fadeUp' : ''}`}>
+    <div className={`flex gap-3 w-full ${isUser ? 'justify-end' : 'justify-start'} ${isLatest ? 'animate-[fadeSlideUp_0.2s_ease-out]' : ''}`}>
       {!isUser && (
-        <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm flex-shrink-0 mr-2 mt-0.5
-          bg-gradient-primary shadow-button">
-          🐾
+        <div className="w-7 h-7 rounded-full bg-[var(--accent)] flex items-center justify-center text-xs flex-shrink-0 mt-0.5 text-white font-bold">
+          M
         </div>
       )}
       <div
-        className={`max-w-[78%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
+        className={`max-w-[80%] sm:max-w-[72%] text-sm leading-[1.65] rounded-2xl px-4 py-3 ${
           isUser
-            ? 'bg-gradient-primary text-white rounded-br-md shadow-button'
-            : 'bg-card border border-card-border text-foreground rounded-bl-md shadow-card'
+            ? 'bg-[var(--user-bubble)] text-white rounded-br-sm'
+            : 'bg-[var(--assistant-bubble)] text-[var(--text-primary)] rounded-bl-sm border border-[var(--border)]'
         }`}
         dir="auto"
       >
         {msg.content || (
-          <span className="inline-flex gap-1">
-            <span className="animate-bounce">·</span>
-            <span className="animate-bounce [animation-delay:0.15s]">·</span>
-            <span className="animate-bounce [animation-delay:0.3s]">·</span>
+          <span className="inline-flex gap-1 items-center">
+            <span className="w-1.5 h-1.5 rounded-full bg-current animate-bounce" />
+            <span className="w-1.5 h-1.5 rounded-full bg-current animate-bounce [animation-delay:0.15s]" />
+            <span className="w-1.5 h-1.5 rounded-full bg-current animate-bounce [animation-delay:0.3s]" />
           </span>
         )}
       </div>
+      {isUser && (
+        <div className="w-7 h-7 rounded-full bg-[var(--muted-bg)] flex items-center justify-center text-xs flex-shrink-0 mt-0.5 border border-[var(--border)]">
+          👤
+        </div>
+      )}
     </div>
   )
 }
 
-// ─── Empty state ───────────────────────────────────────────────────────────
-const EmptyState: React.FC = () => (
-  <div className="flex flex-col items-center justify-center h-full gap-6 pb-8 text-center px-6">
-    <div className="relative">
-      <div className="absolute inset-0 rounded-full blur-2xl opacity-20 scale-150 bg-primary" />
-      <div className="relative w-20 h-20 rounded-full bg-gradient-primary flex items-center justify-center text-4xl shadow-elevated">
-        🐾
-      </div>
+// ─── Empty / welcome ────────────────────────────────────────────────────────
+const WelcomeView: React.FC<{ petName?: string }> = ({ petName }) => (
+  <div className="flex flex-col items-center justify-center h-full gap-8 px-6 text-center">
+    <div className="w-14 h-14 rounded-2xl bg-[var(--accent)] flex items-center justify-center text-2xl shadow-sm">
+      🐾
     </div>
-    <div>
-      <h2 className="text-xl font-bold text-foreground mb-1">היי, אני Mipo!</h2>
-      <p className="text-muted-foreground text-sm max-w-xs">
-        החבר הדיגיטלי של חיית המחמד שלך. שאל אותי כל שאלה — על אכילה, התנהגות, בריאות ועוד.
+    <div className="space-y-2">
+      <h2 className="text-xl font-semibold text-[var(--text-primary)]">היי, אני Mipo!</h2>
+      <p className="text-sm text-[var(--text-secondary)] max-w-sm leading-relaxed">
+        {petName
+          ? `אני כאן לעזור לך עם כל שאלה על ${petName}.`
+          : 'שאל אותי כל שאלה על חיית המחמד שלך.'}
       </p>
     </div>
     <div className="grid grid-cols-2 gap-2 w-full max-w-sm">
@@ -108,8 +162,8 @@ const EmptyState: React.FC = () => (
       ].map(q => (
         <button
           key={q}
-          className="text-xs text-primary bg-primary/5 hover:bg-primary/10 border border-primary/20 rounded-xl px-3 py-2 text-right transition-colors"
           data-suggestion={q}
+          className="text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] bg-[var(--muted-bg)] hover:bg-[var(--hover-bg)] border border-[var(--border)] rounded-xl px-3 py-2.5 text-right transition-colors leading-relaxed"
         >
           {q}
         </button>
@@ -118,7 +172,7 @@ const EmptyState: React.FC = () => (
   </div>
 )
 
-// ─── Main ChatPage ──────────────────────────────────────────────────────────
+// ─── Main ───────────────────────────────────────────────────────────────────
 interface ChatPageProps {
   petName?: string
   petType?: string
@@ -126,28 +180,73 @@ interface ChatPageProps {
 }
 
 export const ChatPage: React.FC<ChatPageProps> = ({ petName, petType, onBack }) => {
-  const [messages,  setMessages]  = useState<ChatMessage[]>([])
-  const [input,     setInput]     = useState('')
-  const [streaming, setStreaming] = useState(false)
-  const [focused,   setFocused]   = useState(false)
-  const [error,     setError]     = useState<string | null>(null)
+  const [conversations, setConversations] = useState<Conversation[]>([newConversation()])
+  const [activeId,      setActiveId]      = useState(conversations[0].id)
+  const [input,         setInput]         = useState('')
+  const [streaming,     setStreaming]     = useState(false)
+  const [sidebarOpen,   setSidebarOpen]   = useState(false)
+  const [error,         setError]         = useState<string | null>(null)
+  const [darkMode,      setDarkMode]      = useState(() =>
+    window.matchMedia('(prefers-color-scheme: dark)').matches
+  )
 
-  const bottomRef = useRef<HTMLDivElement>(null)
-  const inputRef  = useRef<HTMLTextAreaElement>(null)
-  const abortRef  = useRef<boolean>(false)
+  const bottomRef  = useRef<HTMLDivElement>(null)
+  const inputRef   = useRef<HTMLTextAreaElement>(null)
+  const abortRef   = useRef(false)
+
+  const activeConv = conversations.find(c => c.id === activeId) ?? conversations[0]
+
+  // CSS design tokens per mode
+  const tokens = darkMode ? {
+    '--bg':               '#0f0f0f',
+    '--sidebar-bg':       '#161616',
+    '--border':           'rgba(255,255,255,0.07)',
+    '--hover-bg':         'rgba(255,255,255,0.06)',
+    '--active-bg':        'rgba(255,255,255,0.10)',
+    '--muted-bg':         '#1e1e1e',
+    '--text-primary':     '#f2f2f2',
+    '--text-secondary':   '#9a9a9a',
+    '--text-tertiary':    '#5a5a5a',
+    '--accent':           '#0099E6',
+    '--user-bubble':      '#0077BB',
+    '--assistant-bubble': '#1e1e1e',
+    '--input-bg':         '#1a1a1a',
+    '--input-border':     'rgba(255,255,255,0.10)',
+    '--input-ring':       'rgba(0,153,230,0.4)',
+  } : {
+    '--bg':               '#ffffff',
+    '--sidebar-bg':       '#f9f9f9',
+    '--border':           'rgba(0,0,0,0.07)',
+    '--hover-bg':         'rgba(0,0,0,0.04)',
+    '--active-bg':        'rgba(0,0,0,0.07)',
+    '--muted-bg':         '#f3f4f6',
+    '--text-primary':     '#111111',
+    '--text-secondary':   '#6b7280',
+    '--text-tertiary':    '#9ca3af',
+    '--accent':           '#0099E6',
+    '--user-bubble':      '#0099E6',
+    '--assistant-bubble': '#f9fafb',
+    '--input-bg':         '#ffffff',
+    '--input-border':     'rgba(0,0,0,0.10)',
+    '--input-ring':       'rgba(0,153,230,0.35)',
+  }
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages])
+  }, [activeConv.messages])
 
+  // suggestion chips
   useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      const t = e.target as HTMLElement
-      const q = t.dataset.suggestion
+    const h = (e: MouseEvent) => {
+      const q = (e.target as HTMLElement).dataset.suggestion
       if (q) { setInput(q); inputRef.current?.focus() }
     }
-    document.addEventListener('click', handler)
-    return () => document.removeEventListener('click', handler)
+    document.addEventListener('click', h)
+    return () => document.removeEventListener('click', h)
+  }, [])
+
+  const updateConversation = useCallback((id: string, updater: (c: Conversation) => Conversation) => {
+    setConversations(prev => prev.map(c => c.id === id ? updater(c) : c))
   }, [])
 
   const send = useCallback(async (text: string) => {
@@ -155,131 +254,194 @@ export const ChatPage: React.FC<ChatPageProps> = ({ petName, petType, onBack }) 
     if (!trimmed || streaming) return
 
     setError(null)
-    const userMsg: ChatMessage = { role: 'user', content: trimmed }
-    const next = [...messages, userMsg]
-    setMessages(next)
     setInput('')
     setStreaming(true)
     abortRef.current = false
 
-    setMessages(m => [...m, { role: 'assistant', content: '' }])
+    const userMsg: ChatMessage = { role: 'user', content: trimmed }
+    const prevMessages = activeConv.messages
+    const next = [...prevMessages, userMsg]
+
+    // Auto-title from first message
+    const isFirst = prevMessages.length === 0
+    updateConversation(activeId, c => ({
+      ...c,
+      title: isFirst ? trimmed.slice(0, 40) : c.title,
+      messages: [...next, { role: 'assistant', content: '' }],
+      updatedAt: new Date(),
+    }))
 
     try {
       let full = ''
       for await (const delta of streamMessage(next, { petName, petType })) {
         if (abortRef.current) break
         full += delta
-        setMessages(m => {
-          const copy = [...m]
-          copy[copy.length - 1] = { role: 'assistant', content: full }
-          return copy
-        })
+        updateConversation(activeId, c => ({
+          ...c,
+          messages: [...next, { role: 'assistant', content: full }],
+        }))
       }
     } catch (err: any) {
       setError(err.message)
-      setMessages(m => m.slice(0, -1))
+      updateConversation(activeId, c => ({ ...c, messages: next }))
     } finally {
       setStreaming(false)
     }
-  }, [messages, streaming, petName, petType])
+  }, [activeConv.messages, activeId, streaming, petName, petType, updateConversation])
 
   const handleKey = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      send(input)
-    }
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(input) }
+  }
+
+  const createNew = () => {
+    const c = newConversation()
+    setConversations(prev => [c, ...prev])
+    setActiveId(c.id)
+  }
+
+  const deleteConv = (id: string) => {
+    setConversations(prev => {
+      const next = prev.filter(c => c.id !== id)
+      if (id === activeId && next.length > 0) setActiveId(next[0].id)
+      if (next.length === 0) { const c = newConversation(); setActiveId(c.id); return [c] }
+      return next
+    })
   }
 
   return (
-    <div className="flex flex-col h-screen bg-background relative overflow-hidden" dir="rtl">
+    <div
+      className="flex h-screen overflow-hidden"
+      style={{ ...(tokens as React.CSSProperties), background: 'var(--bg)', fontFamily: 'system-ui, -apple-system, sans-serif' } as React.CSSProperties}
+      dir="rtl"
+    >
+      <style>{`
+        @keyframes fadeSlideUp {
+          from { opacity: 0; transform: translateY(6px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
 
-      {/* Aurora bg */}
-      <div className="fixed inset-0 pointer-events-none">
-        <div className="absolute top-[-20%] right-[-10%] w-[400px] h-[400px] rounded-full bg-primary/8 blur-[100px]" />
-        <div className="absolute bottom-[10%] left-[-10%] w-[350px] h-[350px] rounded-full bg-accent/6 blur-[90px]" />
-      </div>
+      {/* Sidebar */}
+      <Sidebar
+        open={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+        conversations={conversations}
+        activeId={activeId}
+        onSelect={setActiveId}
+        onNew={createNew}
+        onDelete={deleteConv}
+        petName={petName}
+      />
 
-      {/* Header */}
-      <header className="relative z-10 flex items-center gap-3 px-4 py-3 border-b border-border bg-card/80 backdrop-blur-sm">
-        {onBack && (
-          <button onClick={onBack} className="p-2 rounded-xl hover:bg-muted transition-colors text-muted-foreground">
-            <svg viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
-              <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd"/>
-            </svg>
-          </button>
-        )}
-        <div className="w-9 h-9 rounded-full bg-gradient-primary flex items-center justify-center text-lg shadow-button">
-          🐾
-        </div>
-        <div>
-          <p className="text-sm font-bold text-foreground leading-tight">Mipo</p>
-          <p className="text-xs text-primary">{streaming ? 'מקליד...' : 'מוכן לשיחה'}</p>
-        </div>
-      </header>
+      {/* Main */}
+      <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
 
-      {/* Messages */}
-      <div className="relative z-10 flex-1 overflow-y-auto px-4 py-4">
-        {messages.length === 0 ? (
-          <EmptyState />
-        ) : (
-          <div className="flex flex-col gap-3 max-w-xl mx-auto">
-            {messages.map((m, i) => (
-              <Bubble key={i} msg={m} isNew={i === messages.length - 1} />
-            ))}
-          </div>
-        )}
-        {error && (
-          <p className="text-center text-xs text-destructive mt-2">{error}</p>
-        )}
-        <div ref={bottomRef} />
-      </div>
-
-      {/* Walking pet + Input bar */}
-      <div className="relative z-10 px-4 pb-6 pt-0">
-        <div className="max-w-xl mx-auto">
-          <WalkingPet typing={streaming} />
-
-          <div
-            className={`flex items-end gap-2 rounded-xl border bg-card/90 backdrop-blur-sm px-3 py-2 transition-all duration-300 ${
-              focused
-                ? 'border-transparent ring-2 ring-ring shadow-elevated'
-                : 'border-border shadow-card'
-            }`}
+        {/* Top bar */}
+        <header className="flex items-center gap-3 px-4 h-14 border-b flex-shrink-0" style={{ borderColor: 'var(--border)', background: 'var(--bg)' }}>
+          <button
+            onClick={() => setSidebarOpen(true)}
+            className="p-2 rounded-lg transition-colors lg:hidden"
+            style={{ color: 'var(--text-secondary)' }}
+            onMouseEnter={e => (e.currentTarget.style.background = 'var(--hover-bg)')}
+            onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
           >
-            <textarea
-              ref={inputRef}
-              value={input}
-              onChange={e => setInput(e.target.value)}
-              onKeyDown={handleKey}
-              onFocus={() => setFocused(true)}
-              onBlur={() => setFocused(false)}
-              placeholder={`שאל את Mipo על ${petName ?? 'חיית המחמד שלך'}...`}
-              rows={1}
-              disabled={streaming}
-              className="flex-1 resize-none bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none py-1.5 max-h-32 leading-relaxed"
-              style={{ fieldSizing: 'content' } as React.CSSProperties}
-            />
+            <IconMenu />
+          </button>
+          {onBack && (
             <button
-              onClick={() => send(input)}
-              disabled={!input.trim() || streaming}
-              className={`flex-shrink-0 w-9 h-9 rounded-xl flex items-center justify-center transition-all ${
-                input.trim() && !streaming
-                  ? 'bg-gradient-primary text-white shadow-button hover:shadow-button-hover hover:opacity-90 active:scale-95'
-                  : 'bg-muted text-muted-foreground cursor-not-allowed'
-              }`}
+              onClick={onBack}
+              className="text-sm transition-colors"
+              style={{ color: 'var(--text-secondary)' }}
             >
-              {streaming ? (
-                <div className="w-4 h-4 border-2 border-primary/30 border-t-white rounded-full animate-spin"/>
-              ) : (
-                <svg viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 rotate-180">
-                  <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z"/>
-                </svg>
-              )}
+              ← חזרה
+            </button>
+          )}
+          <div className="flex-1 text-sm font-medium truncate" style={{ color: 'var(--text-primary)' }}>
+            {petName ? `Mipo — ${petName}` : 'Mipo AI'}
+          </div>
+          <div className="flex items-center gap-1">
+            <span className="text-xs mr-1" style={{ color: 'var(--text-tertiary)' }}>
+              {streaming ? '⏳' : ''}
+            </span>
+            {/* Dark mode toggle */}
+            <button
+              onClick={() => setDarkMode(d => !d)}
+              className="w-8 h-8 rounded-lg flex items-center justify-center text-sm transition-colors"
+              style={{ color: 'var(--text-secondary)' }}
+              title="החלף מצב תצוגה"
+            >
+              {darkMode ? '☀️' : '🌙'}
             </button>
           </div>
-          <p className="text-center text-[10px] text-muted-foreground mt-2">
-            Mipo לא מחליף ייעוץ וטרינרי מקצועי
-          </p>
+        </header>
+
+        {/* Messages */}
+        <div className="flex-1 overflow-y-auto" style={{ background: 'var(--bg)' }}>
+          <div className="max-w-[768px] mx-auto px-4 py-6">
+            {activeConv.messages.length === 0 ? (
+              <WelcomeView petName={petName} />
+            ) : (
+              <div className="flex flex-col gap-4">
+                {activeConv.messages.map((m, i) => (
+                  <Message key={i} msg={m} isLatest={i === activeConv.messages.length - 1} />
+                ))}
+              </div>
+            )}
+            {error && (
+              <p className="text-center text-xs mt-4" style={{ color: '#ef4444' }}>{error}</p>
+            )}
+            <div ref={bottomRef} className="h-4" />
+          </div>
+        </div>
+
+        {/* Input bar */}
+        <div className="flex-shrink-0 border-t px-4 py-4" style={{ borderColor: 'var(--border)', background: 'var(--bg)' }}>
+          <div className="max-w-[768px] mx-auto">
+            <div
+              className="flex items-end gap-2 rounded-xl border px-4 py-3 transition-all duration-200"
+              style={{
+                background:   'var(--input-bg)',
+                borderColor:  'var(--input-border)',
+              }}
+              onFocusCapture={e => (e.currentTarget.style.boxShadow = '0 0 0 3px var(--input-ring)')}
+              onBlurCapture={e  => (e.currentTarget.style.boxShadow = 'none')}
+            >
+              <textarea
+                ref={inputRef}
+                value={input}
+                onChange={e => setInput(e.target.value)}
+                onKeyDown={handleKey}
+                placeholder={`שאל על ${petName ?? 'חיית המחמד שלך'}...`}
+                rows={1}
+                disabled={streaming}
+                className="flex-1 resize-none bg-transparent text-sm outline-none py-0.5 max-h-32 leading-relaxed"
+                style={{
+                  color:           'var(--text-primary)',
+                  caretColor:      'var(--accent)',
+                  fieldSizing:     'content',
+                } as React.CSSProperties}
+              />
+              <button
+                onClick={() => send(input)}
+                disabled={!input.trim() || streaming}
+                className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center transition-all text-white"
+                style={{
+                  background: input.trim() && !streaming ? 'var(--accent)' : 'var(--muted-bg)',
+                  color: input.trim() && !streaming ? 'white' : 'var(--text-tertiary)',
+                  cursor: input.trim() && !streaming ? 'pointer' : 'not-allowed',
+                }}
+              >
+                {streaming ? (
+                  <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : (
+                  <IconSend />
+                )}
+              </button>
+            </div>
+            <p className="text-center text-[10px] mt-2" style={{ color: 'var(--text-tertiary)' }}>
+              Mipo לא מחליף ייעוץ וטרינרי מקצועי · Enter לשליחה
+            </p>
+          </div>
         </div>
       </div>
     </div>
