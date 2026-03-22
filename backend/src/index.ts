@@ -3,8 +3,9 @@ import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 
-import healthRouter from './routes/health';
-import chatRouter   from './routes/chat';
+import healthRouter       from './routes/health';
+import chatRouter         from './routes/chat';
+import detectBreedRouter  from './routes/detect-breed';
 
 const app  = express();
 const PORT = Number(process.env.PORT ?? 3001);
@@ -14,8 +15,9 @@ app.use(cors());
 app.use(express.json());
 
 // ─── Routes ──────────────────────────────────────────────────
-app.use('/health', healthRouter);
-app.use('/chat',   chatRouter);
+app.use('/health',        healthRouter);
+app.use('/chat',          chatRouter);
+app.use('/detect-breed',  detectBreedRouter);
 
 // 404
 app.use((_req, res) => {
