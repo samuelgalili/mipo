@@ -41,11 +41,8 @@ export const Screen1Welcome: React.FC<Props> = ({ onNext }) => {
             <br />
             <span className="text-[#7C3AED]">{t('onboarding.screen1.titleHighlight')}</span>
           </h1>
-          <p className="text-muted-foreground text-base leading-relaxed whitespace-pre-line">
+          <p className="text-muted-foreground text-base leading-relaxed">
             {t('onboarding.screen1.subtitle')}
-          </p>
-          <p className="text-primary/80 text-sm font-medium mt-1">
-            {t('common.appTagline')}
           </p>
         </div>
       </div>
