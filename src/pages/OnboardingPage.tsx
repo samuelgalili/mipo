@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
@@ -24,13 +25,10 @@ const initialData: OnboardingData = {
 
 type Errors = Partial<Record<keyof OnboardingData, string>>
 
-interface OnboardingPageProps {
-  onComplete?: () => void
-}
-
-export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onComplete }) => {
+export const OnboardingPage: React.FC = () => {
   const { t } = useTranslation()
   const { user } = useAuth()
+  const navigate = useNavigate()
   const [screen, setScreen] = useState(1)
   const [data, setData] = useState<OnboardingData>(initialData)
   const [errors, setErrors] = useState<Errors>({})
@@ -107,7 +105,7 @@ export const OnboardingPage: React.FC<OnboardingPageProps> = ({ onComplete }) =>
     return (
       <div className="min-h-screen bg-background flex flex-col">
         <div className="flex-1 flex flex-col max-w-md w-full mx-auto">
-          <Screen6Done data={data} onFinish={() => onComplete?.()} />
+          <Screen6Done data={data} onFinish={() => navigate('/dashboard', { replace: true })} />
         </div>
       </div>
     )

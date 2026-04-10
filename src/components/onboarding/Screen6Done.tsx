@@ -52,7 +52,7 @@ export const Screen6Done: React.FC<Props> = ({ data, onFinish }) => {
         <div className="w-full bg-secondary rounded-organic p-4 text-sm text-right space-y-2 border border-border">
           <div className="flex justify-between text-muted-foreground">
             <span className="font-semibold text-foreground">{data.petName}</span>
-            <span>{pet?.emoji} {t(`pets.${data.petType}.label`, pet?.label)}</span>
+            <span>{pet?.emoji} {String(t(`pets.${data.petType}.label` as any, pet?.label ?? ''))}</span>
           </div>
           {data.petBreed && (
             <div className="flex justify-between text-muted-foreground">

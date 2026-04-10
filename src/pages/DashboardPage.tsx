@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { Card } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
 import { PET_OPTIONS } from '../types/onboarding'
-import { ChatPage } from './ChatPage'
 
 interface Pet {
   id: string
@@ -16,9 +16,9 @@ interface Pet {
 
 export const DashboardPage: React.FC = () => {
   const { user, signOut } = useAuth()
+  const navigate = useNavigate()
   const [pets, setPets] = useState<Pet[]>([])
   const [loading, setLoading] = useState(true)
-  const [chatPet, setChatPet] = useState<Pet | null>(null)
 
   useEffect(() => {
     if (!user) return
@@ -37,14 +37,6 @@ export const DashboardPage: React.FC = () => {
 
   const getPetLabel = (type: string) =>
     PET_OPTIONS.find((p) => p.type === type)?.label ?? type
-
-  if (chatPet) return (
-    <ChatPage
-      petName={chatPet.pet_name}
-      petType={chatPet.pet_type}
-      onBack={() => setChatPet(null)}
-    />
-  )
 
   return (
     <div className="min-h-screen bg-background">
@@ -96,7 +88,7 @@ export const DashboardPage: React.FC = () => {
                     </p>
                   </div>
                   <button
-                    onClick={() => setChatPet(pet)}
+                    onClick={() => navigate(`/chat/${pet.id}`, { state: { pet } })}
                     className="flex-shrink-0 w-10 h-10 rounded-xl bg-gradient-primary flex items-center justify-center text-white shadow-button hover:shadow-button-hover hover:opacity-90 active:scale-95 transition-all"
                     title={`שוחח עם Mipo על ${pet.pet_name}`}
                   >

@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react'
+import { useParams, useLocation, useNavigate } from 'react-router-dom'
 import { streamMessage, type ChatMessage } from '../services/chat'
 
 // ─── Types ─────────────────────────────────────────────────────────────────
@@ -7,6 +8,14 @@ interface Conversation {
   title: string
   messages: ChatMessage[]
   updatedAt: Date
+}
+
+interface PetState {
+  id: string
+  pet_name: string
+  pet_type: string
+  pet_age?: number | null
+  pet_breed?: string | null
 }
 
 function newConversation(): Conversation {
@@ -36,11 +45,9 @@ const Sidebar: React.FC<SidebarProps> = ({
   open, onClose, conversations, activeId, onSelect, onNew, onDelete, petName
 }) => (
   <>
-    {/* Mobile overlay */}
     {open && (
       <div className="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm lg:hidden" onClick={onClose} />
     )}
-
     <aside
       className={`
         fixed top-0 bottom-0 left-0 z-50 w-[260px] flex flex-col
@@ -50,7 +57,6 @@ const Sidebar: React.FC<SidebarProps> = ({
         ${open ? 'translate-x-0' : '-translate-x-full'}
       `}
     >
-      {/* Header */}
       <div className="flex items-center justify-between px-4 h-14 border-b border-[var(--border)] flex-shrink-0">
         <span className="text-sm font-semibold text-[var(--text-primary)]">🐾 Mipo</span>
         <button
@@ -61,7 +67,6 @@ const Sidebar: React.FC<SidebarProps> = ({
         </button>
       </div>
 
-      {/* Conversations */}
       <div className="flex-1 overflow-y-auto py-2 px-2">
         {petName && (
           <div className="px-3 py-1.5 mb-1">
@@ -96,7 +101,6 @@ const Sidebar: React.FC<SidebarProps> = ({
         )}
       </div>
 
-      {/* Footer */}
       <div className="px-4 py-3 border-t border-[var(--border)] flex-shrink-0">
         <p className="text-[11px] text-[var(--text-tertiary)]">Mipo לא מחליף ייעוץ וטרינרי</p>
       </div>
@@ -173,13 +177,15 @@ const WelcomeView: React.FC<{ petName?: string }> = ({ petName }) => (
 )
 
 // ─── Main ───────────────────────────────────────────────────────────────────
-interface ChatPageProps {
-  petName?: string
-  petType?: string
-  onBack?: () => void
-}
+export const ChatPage: React.FC = () => {
+  const { petId: _petId } = useParams<{ petId: string }>()
+  const location = useLocation()
+  const navigate = useNavigate()
 
-export const ChatPage: React.FC<ChatPageProps> = ({ petName, petType, onBack }) => {
+  const pet = (location.state as { pet?: PetState } | null)?.pet
+  const petName = pet?.pet_name
+  const petType = pet?.pet_type
+
   const [conversations, setConversations] = useState<Conversation[]>([newConversation()])
   const [activeId,      setActiveId]      = useState(conversations[0].id)
   const [input,         setInput]         = useState('')
@@ -196,7 +202,6 @@ export const ChatPage: React.FC<ChatPageProps> = ({ petName, petType, onBack }) 
 
   const activeConv = conversations.find(c => c.id === activeId) ?? conversations[0]
 
-  // CSS design tokens per mode
   const tokens = darkMode ? {
     '--bg':               '#0f0f0f',
     '--sidebar-bg':       '#161616',
@@ -235,7 +240,6 @@ export const ChatPage: React.FC<ChatPageProps> = ({ petName, petType, onBack }) 
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [activeConv.messages])
 
-  // suggestion chips
   useEffect(() => {
     const h = (e: MouseEvent) => {
       const q = (e.target as HTMLElement).dataset.suggestion
@@ -262,7 +266,6 @@ export const ChatPage: React.FC<ChatPageProps> = ({ petName, petType, onBack }) 
     const prevMessages = activeConv.messages
     const next = [...prevMessages, userMsg]
 
-    // Auto-title from first message
     const isFirst = prevMessages.length === 0
     updateConversation(activeId, c => ({
       ...c,
@@ -321,7 +324,6 @@ export const ChatPage: React.FC<ChatPageProps> = ({ petName, petType, onBack }) 
         }
       `}</style>
 
-      {/* Sidebar */}
       <Sidebar
         open={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
@@ -333,10 +335,8 @@ export const ChatPage: React.FC<ChatPageProps> = ({ petName, petType, onBack }) 
         petName={petName}
       />
 
-      {/* Main */}
       <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
 
-        {/* Top bar */}
         <header className="flex items-center gap-3 px-4 h-14 border-b flex-shrink-0" style={{ borderColor: 'var(--border)', background: 'var(--bg)' }}>
           <button
             onClick={() => setSidebarOpen(true)}
@@ -347,15 +347,13 @@ export const ChatPage: React.FC<ChatPageProps> = ({ petName, petType, onBack }) 
           >
             <IconMenu />
           </button>
-          {onBack && (
-            <button
-              onClick={onBack}
-              className="text-sm transition-colors"
-              style={{ color: 'var(--text-secondary)' }}
-            >
-              ← חזרה
-            </button>
-          )}
+          <button
+            onClick={() => navigate('/dashboard')}
+            className="text-sm transition-colors"
+            style={{ color: 'var(--text-secondary)' }}
+          >
+            ← חזרה
+          </button>
           <div className="flex-1 text-sm font-medium truncate" style={{ color: 'var(--text-primary)' }}>
             {petName ? `Mipo — ${petName}` : 'Mipo AI'}
           </div>
@@ -363,7 +361,6 @@ export const ChatPage: React.FC<ChatPageProps> = ({ petName, petType, onBack }) 
             <span className="text-xs mr-1" style={{ color: 'var(--text-tertiary)' }}>
               {streaming ? '⏳' : ''}
             </span>
-            {/* Dark mode toggle */}
             <button
               onClick={() => setDarkMode(d => !d)}
               className="w-8 h-8 rounded-lg flex items-center justify-center text-sm transition-colors"
@@ -375,7 +372,6 @@ export const ChatPage: React.FC<ChatPageProps> = ({ petName, petType, onBack }) 
           </div>
         </header>
 
-        {/* Messages */}
         <div className="flex-1 overflow-y-auto" style={{ background: 'var(--bg)' }}>
           <div className="max-w-[768px] mx-auto px-4 py-6">
             {activeConv.messages.length === 0 ? (
@@ -394,15 +390,11 @@ export const ChatPage: React.FC<ChatPageProps> = ({ petName, petType, onBack }) 
           </div>
         </div>
 
-        {/* Input bar */}
         <div className="flex-shrink-0 border-t px-4 py-4" style={{ borderColor: 'var(--border)', background: 'var(--bg)' }}>
           <div className="max-w-[768px] mx-auto">
             <div
               className="flex items-end gap-2 rounded-xl border px-4 py-3 transition-all duration-200"
-              style={{
-                background:   'var(--input-bg)',
-                borderColor:  'var(--input-border)',
-              }}
+              style={{ background: 'var(--input-bg)', borderColor: 'var(--input-border)' }}
               onFocusCapture={e => (e.currentTarget.style.boxShadow = '0 0 0 3px var(--input-ring)')}
               onBlurCapture={e  => (e.currentTarget.style.boxShadow = 'none')}
             >
@@ -416,9 +408,9 @@ export const ChatPage: React.FC<ChatPageProps> = ({ petName, petType, onBack }) 
                 disabled={streaming}
                 className="flex-1 resize-none bg-transparent text-sm outline-none py-0.5 max-h-32 leading-relaxed"
                 style={{
-                  color:           'var(--text-primary)',
-                  caretColor:      'var(--accent)',
-                  fieldSizing:     'content',
+                  color:       'var(--text-primary)',
+                  caretColor:  'var(--accent)',
+                  fieldSizing: 'content',
                 } as React.CSSProperties}
               />
               <button

@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 
 export const AuthCallbackPage: React.FC = () => {
+  const navigate = useNavigate()
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading')
   const [error, setError] = useState<string | null>(null)
 
@@ -17,10 +19,7 @@ export const AuthCallbackPage: React.FC = () => {
         }
 
         setStatus('success')
-        // redirect to home after short delay
-        setTimeout(() => {
-          window.location.href = '/'
-        }, 1500)
+        setTimeout(() => navigate('/', { replace: true }), 1500)
       } catch (err: any) {
         setError(err.message ?? 'שגיאה באימות')
         setStatus('error')
@@ -28,7 +27,7 @@ export const AuthCallbackPage: React.FC = () => {
     }
 
     handleCallback()
-  }, [])
+  }, [navigate])
 
   return (
     <div dir="rtl" className="min-h-screen flex items-center justify-center bg-gradient-to-br from-sky-50 via-white to-blue-50">
@@ -51,9 +50,12 @@ export const AuthCallbackPage: React.FC = () => {
             <div className="text-5xl">❌</div>
             <h2 className="text-xl font-bold text-gray-800">שגיאה באימות</h2>
             <p className="text-red-500 text-sm">{error}</p>
-            <a href="/" className="inline-block mt-2 text-sky-600 underline text-sm">
+            <button
+              onClick={() => navigate('/', { replace: true })}
+              className="inline-block mt-2 text-sky-600 underline text-sm"
+            >
               חזרה לדף הבית
-            </a>
+            </button>
           </>
         )}
       </div>
