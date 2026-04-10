@@ -1,4 +1,5 @@
 // src/services/chat.ts — Mipo AI Chat API client
+import { supabase } from '../lib/supabase';
 
 const API_URL = import.meta.env.VITE_API_URL ?? '';
 
@@ -7,13 +8,20 @@ export interface ChatMessage {
   content: string;
 }
 
+async function getAuthHeaders(): Promise<Record<string, string>> {
+  const { data } = await supabase.auth.getSession();
+  const token = data.session?.access_token;
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
 export async function sendMessage(
   messages: ChatMessage[],
   opts?: { petName?: string; petType?: string }
 ): Promise<string> {
+  const authHeaders = await getAuthHeaders();
   const res = await fetch(`${API_URL}/chat`, {
     method:  'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...authHeaders },
     body:    JSON.stringify({ messages, ...opts }),
   });
 
@@ -30,9 +38,10 @@ export async function* streamMessage(
   messages: ChatMessage[],
   opts?: { petName?: string; petType?: string }
 ): AsyncGenerator<string> {
+  const authHeaders = await getAuthHeaders();
   const res = await fetch(`${API_URL}/chat/stream`, {
     method:  'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...authHeaders },
     body:    JSON.stringify({ messages, ...opts }),
   });
 
