@@ -6,6 +6,7 @@ import cors from 'cors';
 import healthRouter       from './routes/health';
 import chatRouter         from './routes/chat';
 import detectBreedRouter  from './routes/detect-breed';
+import identifyPetRouter  from './routes/identify-pet';
 
 const app  = express();
 const PORT = Number(process.env.PORT ?? 3001);
@@ -18,6 +19,7 @@ app.use(express.json({ limit: '15mb' }));
 app.use('/health',        healthRouter);
 app.use('/chat',          chatRouter);
 app.use('/detect-breed',  detectBreedRouter);
+app.use('/identify-pet',  identifyPetRouter);
 
 // 404
 app.use((_req, res) => {
