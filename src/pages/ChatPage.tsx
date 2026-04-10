@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react'
 import { useParams, useLocation, useNavigate } from 'react-router-dom'
 import { streamMessage, type ChatMessage } from '../services/chat'
+import { saveMessage } from '../services/chatStorage'
+import { useAuth } from '../context/AuthContext'
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 interface Conversation {
@@ -178,9 +180,10 @@ const WelcomeView: React.FC<{ petName?: string }> = ({ petName }) => (
 
 // ─── Main ───────────────────────────────────────────────────────────────────
 export const ChatPage: React.FC = () => {
-  const { petId: _petId } = useParams<{ petId: string }>()
+  const { petId } = useParams<{ petId: string }>()
   const location = useLocation()
   const navigate = useNavigate()
+  const { user } = useAuth()
 
   const pet = (location.state as { pet?: PetState } | null)?.pet
   const petName = pet?.pet_name
@@ -274,6 +277,11 @@ export const ChatPage: React.FC = () => {
       updatedAt: new Date(),
     }))
 
+    // שמור הודעת משתמש ל-DB
+    if (user) {
+      saveMessage(userMsg, { userId: user.id, petId, conversationId: activeId })
+    }
+
     try {
       let full = ''
       for await (const delta of streamMessage(next, { petName, petType })) {
@@ -283,6 +291,10 @@ export const ChatPage: React.FC = () => {
           ...c,
           messages: [...next, { role: 'assistant', content: full }],
         }))
+      }
+      // שמור תשובת assistant ל-DB
+      if (user && full) {
+        saveMessage({ role: 'assistant', content: full }, { userId: user.id, petId, conversationId: activeId })
       }
     } catch (err: any) {
       setError(err.message)
